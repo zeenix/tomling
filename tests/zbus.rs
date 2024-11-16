@@ -1,6 +1,6 @@
 #[test]
 fn zbus() {
-    use tomly::{parse, Value};
+    use tomling::{parse, Value};
 
     let parsed_map = parse(CARGO_TOML).unwrap();
 

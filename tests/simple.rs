@@ -1,6 +1,6 @@
 #[test]
 fn simple_cargo_toml() {
-    use tomly::{parse, TomlMap, Value};
+    use tomling::{parse, TomlMap, Value};
 
     let cargo_toml = r#"
         [package]
