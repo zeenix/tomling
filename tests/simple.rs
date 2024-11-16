@@ -8,9 +8,10 @@ fn simple_cargo_toml() {
         version = "0.1.0"
         edition = "2021"
 
+        # This is a comment.
         [dependencies]
         serde = { version = "1.0", features = ["derive"] }
-        regex = "1.5"
+        regex = "1.5" # This is also a comment.
         
         [features]
         default = ["serde"]

@@ -14,7 +14,8 @@ pub fn parse<'i>(mut input: &'i str) -> PResult<TomlMap<'i>, InputError<&'i str>
     let table_header =
         parse_table_header.map(|header| (Some(header), Vec::new(), Value::Table(HashMap::new())));
     let whitespace = multispace1.map(|_| (None, Vec::new(), Value::Table(HashMap::new())));
-    let line_parser = alt((table_header, key_value, whitespace));
+    let comment = parse_comment.map(|_| (None, Vec::new(), Value::Table(HashMap::new())));
+    let line_parser = alt((table_header, key_value, whitespace, comment));
 
     repeat(1.., line_parser)
         .fold(
@@ -57,6 +58,11 @@ pub type TomlMap<'a> = HashMap<&'a str, Value<'a>>;
 /// Parses a table header (e.g., `[dependencies]`)
 fn parse_table_header<'i>(input: &mut &'i str) -> PResult<Vec<&'i str>, InputError<&'i str>> {
     delimited('[', parse_dotted_key, ']').parse_next(input)
+}
+
+/// Parses a comment.
+fn parse_comment<'i>(input: &mut &'i str) -> PResult<&'i str, InputError<&'i str>> {
+    delimited('#', take_while(0.., |c| c != '\n'), '\n').parse_next(input)
 }
 
 /// Parses a single key-value pair
