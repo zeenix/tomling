@@ -4,7 +4,7 @@ fn zbus() {
 
     let parsed_map = parse(CARGO_TOML).unwrap();
 
-    // Too much too check for everything. Let's check some keys and values.
+    // Too much to check for everything. Let's check some keys and values.
     let package = match parsed_map.get("package").unwrap() {
         Value::Table(package) => package,
         _ => panic!(),
