@@ -13,10 +13,13 @@ fn zbus() {
     assert_eq!(package.get("version").unwrap(), &Value::String("5.1.1"));
     assert_eq!(package.get("edition").unwrap(), &Value::String("2021"));
 
+    // Let's check the dependencies, especially the complicated ones.
     let dependencies = match parsed_map.get("dependencies").unwrap() {
         Value::Table(dependencies) => dependencies,
         _ => panic!(),
     };
+
+    // Serde
     let serde = match dependencies.get("serde").unwrap() {
         Value::Table(serde) => serde,
         _ => panic!(),
@@ -25,6 +28,26 @@ fn zbus() {
     assert_eq!(
         serde.get("features").unwrap(),
         &Value::Array(vec![Value::String("derive")])
+    );
+    // Tokio
+    let tokio = match dependencies.get("tokio").unwrap() {
+        Value::Table(tokio) => tokio,
+        _ => panic!(),
+    };
+    assert_eq!(tokio.get("version").unwrap(), &Value::String("1.37.0"));
+    assert_eq!(tokio.get("optional").unwrap(), &Value::Boolean(true));
+    assert_eq!(
+        tokio.get("features").unwrap(),
+        &Value::Array(vec![
+            Value::String("rt"),
+            Value::String("net"),
+            Value::String("time"),
+            Value::String("fs"),
+            Value::String("io-util"),
+            Value::String("process"),
+            Value::String("sync"),
+            Value::String("tracing"),
+        ])
     );
 }
 
