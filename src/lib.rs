@@ -1,4 +1,8 @@
-use std::collections::HashMap;
+#![no_std]
+
+extern crate alloc;
+
+use alloc::{collections::BTreeMap, format, vec::Vec};
 use winnow::{
     ascii::{multispace1, space0},
     combinator::{alt, delimited, opt, repeat, separated, separated_pair, terminated},
@@ -12,14 +16,14 @@ use winnow::{
 pub fn parse<'i>(mut input: &'i str) -> Result<TomlMap<'i>, ()> {
     let key_value = parse_key_value.map(|(keys, value)| (None, keys, value));
     let table_header =
-        parse_table_header.map(|header| (Some(header), Vec::new(), Value::Table(HashMap::new())));
-    let whitespace = multispace1.map(|_| (None, Vec::new(), Value::Table(HashMap::new())));
-    let comment = parse_comment.map(|_| (None, Vec::new(), Value::Table(HashMap::new())));
+        parse_table_header.map(|header| (Some(header), Vec::new(), Value::Table(BTreeMap::new())));
+    let whitespace = multispace1.map(|_| (None, Vec::new(), Value::Table(BTreeMap::new())));
+    let comment = parse_comment.map(|_| (None, Vec::new(), Value::Table(BTreeMap::new())));
     let line_parser = alt((table_header, key_value, whitespace, comment));
 
     repeat(1.., line_parser)
         .fold(
-            || (None, HashMap::new()),
+            || (None, BTreeMap::new()),
             |(current_table, mut map), (header, keys, value)| {
                 if header.is_some() {
                     (header, map)
@@ -51,10 +55,10 @@ pub enum Value<'a> {
     Float(f64),
     Boolean(bool),
     Array(Vec<Value<'a>>),
-    Table(HashMap<&'a str, Value<'a>>),
+    Table(BTreeMap<&'a str, Value<'a>>),
 }
 
-pub type TomlMap<'a> = HashMap<&'a str, Value<'a>>;
+pub type TomlMap<'a> = BTreeMap<&'a str, Value<'a>>;
 
 /// Parses a table header (e.g., `[dependencies]`)
 fn parse_table_header<'i>(input: &mut &'i str) -> PResult<Vec<&'i str>, InputError<&'i str>> {
@@ -191,7 +195,7 @@ fn insert_nested_key<'a>(map: &mut TomlMap<'a>, keys: &[&'a str], value: Value<'
         } else {
             let entry = map
                 .entry(first)
-                .or_insert_with(|| Value::Table(HashMap::new()));
+                .or_insert_with(|| Value::Table(BTreeMap::new()));
 
             if let Value::Table(ref mut nested_map) = entry {
                 insert_nested_key(nested_map, rest, value);
