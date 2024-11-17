@@ -9,7 +9,7 @@ use winnow::{
 };
 
 /// Parse a TOML document.
-pub fn parse<'i>(mut input: &'i str) -> PResult<TomlMap<'i>, InputError<&'i str>> {
+pub fn parse<'i>(mut input: &'i str) -> Result<TomlMap<'i>, ()> {
     let key_value = parse_key_value.map(|(keys, value)| (None, keys, value));
     let table_header =
         parse_table_header.map(|header| (Some(header), Vec::new(), Value::Table(HashMap::new())));
@@ -39,7 +39,8 @@ pub fn parse<'i>(mut input: &'i str) -> PResult<TomlMap<'i>, InputError<&'i str>
             },
         )
         .map(|(_, map)| map)
-        .parse_next(&mut input)
+        .parse(&mut input)
+        .map_err(|_| ())
 }
 
 /// A TOML value.
