@@ -10,9 +10,16 @@ fn simple_cargo_toml() {
 
         # This is a comment.
         [dependencies]
-        serde = { version = "1.0", features = ["derive"] }
+        # a comment.
+        serde = { version = "1.0", features = [
+            # A comment here.
+            "std",
+            # A multiline
+            # comment here.
+            "derive", # and here.
+        ] }
         regex = "1.5" # This is also a comment.
-        
+
         [features]
         default = ["serde"]
     "#;
@@ -36,7 +43,10 @@ fn simple_cargo_toml() {
                 Value::Table({
                     let mut serde = TomlMap::new();
                     serde.insert("version", Value::String("1.0"));
-                    serde.insert("features", Value::Array(vec![Value::String("derive")]));
+                    serde.insert(
+                        "features",
+                        Value::Array(vec![Value::String("std"), Value::String("derive")]),
+                    );
                     serde
                 }),
             );

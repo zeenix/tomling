@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use winnow::{
-    ascii::{multispace0, multispace1},
-    combinator::{alt, delimited, repeat, separated, separated_pair},
+    ascii::{multispace1, space0},
+    combinator::{alt, delimited, opt, repeat, separated, separated_pair, terminated},
     error::InputError,
     stream::AsChar,
-    token::take_while,
+    token::{take_until, take_while},
     PResult, Parser,
 };
 
@@ -62,7 +62,7 @@ fn parse_table_header<'i>(input: &mut &'i str) -> PResult<Vec<&'i str>, InputErr
 
 /// Parses a comment.
 fn parse_comment<'i>(input: &mut &'i str) -> PResult<&'i str, InputError<&'i str>> {
-    delimited('#', take_while(0.., |c| c != '\n'), '\n').parse_next(input)
+    delimited('#', take_until(0.., '\n'), '\n').parse_next(input)
 }
 
 /// Parses a single key-value pair
@@ -80,17 +80,17 @@ fn parse_dotted_key<'i>(input: &mut &'i str) -> PResult<Vec<&'i str>, InputError
 /// Parses a key (alphanumeric or underscores)
 fn parse_key<'i>(input: &mut &'i str) -> PResult<&'i str, InputError<&'i str>> {
     delimited(
-        multispace0,
-        take_while(1.., |c: char| c.is_alphanumeric() || c == '_'),
-        multispace0,
+        space0,
+        take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '-'),
+        space0,
     )
     .parse_next(input)
 }
 
 /// Parses a value (string, integer, float, boolean, array, or table)
 fn parse_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
-    (
-        multispace0,
+    delimited(
+        space0,
         // FIXME: Use `dispatch!` to make it more efficient.
         alt((
             parse_string,
@@ -99,15 +99,14 @@ fn parse_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str
             parse_array,
             parse_inline_table,
         )),
-        multispace0,
+        space0,
     )
-        .map(|(_, value, _)| value)
-        .parse_next(input)
+    .parse_next(input)
 }
 
 /// Parses a string value enclosed in quotes
 fn parse_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
-    delimited('"', take_while(0.., |c| c != '"'), '"')
+    delimited('"', take_until(0.., '"'), '"')
         .map(Value::String)
         .parse_next(input)
 }
@@ -147,20 +146,37 @@ fn parse_boolean<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i s
 /// Parses an array of values
 fn parse_array<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
     delimited(
-        ('[', multispace0),
-        separated(0.., parse_value, ','),
-        (multispace0, ']'),
+        '[',
+        (repeat(0.., parse_multiline_array_values), opt(parse_value)),
+        ']',
     )
-    .map(Value::Array)
+    .map(|(values, value): (Vec<_>, _)| {
+        let mut values: Vec<_> = values.into_iter().filter_map(|x| x).collect();
+        if let Some(value) = value {
+            values.push(value);
+        }
+        Value::Array(values)
+    })
+    .parse_next(input)
+}
+
+fn parse_multiline_array_values<'i>(
+    input: &mut &'i str,
+) -> PResult<Option<Value<'i>>, InputError<&'i str>> {
+    alt((
+        multispace1.map(|_| None),
+        parse_comment.map(|_| None),
+        terminated(parse_value, ',').map(Some),
+    ))
     .parse_next(input)
 }
 
 /// Parses an inline table
 fn parse_inline_table<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
     delimited(
-        ('{', multispace0),
+        '{',
         separated(0.., separated_pair(parse_key, '=', parse_value), ','),
-        (multispace0, '}'),
+        '}',
     )
     .map(|pairs: Vec<(&'i str, Value<'i>)>| Value::Table(pairs.into_iter().collect()))
     .parse_next(input)
