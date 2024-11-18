@@ -1,4 +1,4 @@
-use crate::{Map, Value};
+use crate::{Table, Value};
 
 use alloc::{format, vec, vec::Vec};
 use winnow::{
@@ -11,22 +11,22 @@ use winnow::{
 };
 
 /// Parse a TOML document.
-pub fn parse<'i>(mut input: &'i str) -> Result<Map<'i>, ()> {
+pub fn parse<'i>(mut input: &'i str) -> Result<Table<'i>, ()> {
     let key_value = parse_key_value.map(|(keys, value)| (None, keys, value));
     let table_header = parse_table_header.map(|(header, is_array)| {
         (
             Some((header, is_array)),
             Vec::new(),
-            Value::Table(Map::new()),
+            Value::Table(Table::new()),
         )
     });
-    let whitespace = multispace1.map(|_| (None, Vec::new(), Value::Table(Map::new())));
-    let comment = parse_comment.map(|_| (None, Vec::new(), Value::Table(Map::new())));
+    let whitespace = multispace1.map(|_| (None, Vec::new(), Value::Table(Table::new())));
+    let comment = parse_comment.map(|_| (None, Vec::new(), Value::Table(Table::new())));
     let line_parser = alt((table_header, key_value, whitespace, comment));
 
     repeat(1.., line_parser)
         .fold(
-            || (None, Map::new()),
+            || (None, Table::new()),
             |(mut current_table, mut map), (header, keys, value)| {
                 if let Some((header, is_array)) = header {
                     if is_array {
@@ -35,7 +35,7 @@ pub fn parse<'i>(mut input: &'i str) -> Result<Map<'i>, ()> {
                         let entry = map.entry(key).or_insert_with(|| Value::Array(vec![]));
                         if let Value::Array(array) = entry {
                             // Append a new empty table to the array
-                            let new_table = Map::new();
+                            let new_table = Table::new();
                             array.push(Value::Table(new_table));
 
                             // Update current_table to reference the new table
@@ -261,12 +261,14 @@ fn parse_inline_table<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<
 }
 
 /// Inserts a value into a nested map using a dotted key
-fn insert_nested_key<'a>(map: &mut Map<'a>, keys: &[&'a str], value: Value<'a>) {
+fn insert_nested_key<'a>(map: &mut Table<'a>, keys: &[&'a str], value: Value<'a>) {
     if let Some((first, rest)) = keys.split_first() {
         if rest.is_empty() {
             map.insert(first, value);
         } else {
-            let entry = map.entry(first).or_insert_with(|| Value::Table(Map::new()));
+            let entry = map
+                .entry(first)
+                .or_insert_with(|| Value::Table(Table::new()));
 
             if let Value::Table(ref mut nested_map) = entry {
                 insert_nested_key(nested_map, rest, value);
