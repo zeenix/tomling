@@ -1,6 +1,6 @@
 #[test]
 fn simple_cargo_toml() {
-    use tomling::{parse, TomlMap, Value};
+    use tomling::{parse, Map, Value};
 
     let cargo_toml = r#"
         [package]
@@ -23,11 +23,11 @@ fn simple_cargo_toml() {
         [features]
         default = ["serde"]
     "#;
-    let mut map = TomlMap::new();
+    let mut map = Map::new();
     map.insert(
         "package",
         Value::Table({
-            let mut package = TomlMap::new();
+            let mut package = Map::new();
             package.insert("name", Value::String("example"));
             package.insert("version", Value::String("0.1.0"));
             package.insert("edition", Value::String("2021"));
@@ -37,11 +37,11 @@ fn simple_cargo_toml() {
     map.insert(
         "dependencies",
         Value::Table({
-            let mut dependencies = TomlMap::new();
+            let mut dependencies = Map::new();
             dependencies.insert(
                 "serde",
                 Value::Table({
-                    let mut serde = TomlMap::new();
+                    let mut serde = Map::new();
                     serde.insert("version", Value::String("1.0"));
                     serde.insert(
                         "features",
@@ -57,7 +57,7 @@ fn simple_cargo_toml() {
     map.insert(
         "features",
         Value::Table({
-            let mut features = TomlMap::new();
+            let mut features = Map::new();
             features.insert("default", Value::Array(vec![Value::String("serde")]));
             features
         }),
