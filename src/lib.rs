@@ -111,7 +111,22 @@ fn parse_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str
 
 /// Parses a string value enclosed in quotes
 fn parse_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
+    // TODO:
+    // * Handle multiline basic and literal strings.
+    // * Handle escape sequences.
+    alt((parse_basic_string, parse_literal_string)).parse_next(input)
+}
+
+/// Parses a basic string value enclosed in quotes.
+fn parse_basic_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
     delimited('"', take_until(0.., '"'), '"')
+        .map(Value::String)
+        .parse_next(input)
+}
+
+/// Parses a literal string value enclosed in single quotes.
+fn parse_literal_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
+    delimited('\'', take_until(0.., '\''), '\'')
         .map(Value::String)
         .parse_next(input)
 }
