@@ -68,7 +68,7 @@ fn zbus() {
         })
         .and_then(|n| match n {
             Value::Table(n) => Some(n),
-            _ => panic!(),
+            _ => None,
         })
         .unwrap();
     assert_eq!(nix.get("version").unwrap(), &Value::String("0.29"));
