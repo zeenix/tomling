@@ -155,7 +155,13 @@ fn parse_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i st
     // TODO:
     // * Handle multiline basic and literal strings.
     // * Handle escape sequences.
-    alt((parse_basic_string, parse_literal_string)).parse_next(input)
+    alt((
+        parse_multiline_basic_string,
+        parse_basic_string,
+        parse_multiline_literal_string,
+        parse_literal_string,
+    ))
+    .parse_next(input)
 }
 
 /// Parses a basic string value enclosed in quotes.
@@ -170,6 +176,32 @@ fn parse_literal_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputErro
     delimited('\'', take_until(0.., '\''), '\'')
         .map(Value::String)
         .parse_next(input)
+}
+
+/// Parses a multiline basic string value enclosed in triple quotes.
+fn parse_multiline_basic_string<'i>(
+    input: &mut &'i str,
+) -> PResult<Value<'i>, InputError<&'i str>> {
+    delimited(
+        "\"\"\"",
+        take_until(0.., "\"\"\"").map(|s: &str| s.trim_start_matches('\n')), // Trim leading newlines
+        "\"\"\"",
+    )
+    .map(Value::String)
+    .parse_next(input)
+}
+
+/// Parses a literal multiline string value enclosed in triple single quotes (`'''`).
+fn parse_multiline_literal_string<'i>(
+    input: &mut &'i str,
+) -> PResult<Value<'i>, InputError<&'i str>> {
+    delimited(
+        "'''",
+        take_until(0.., "'''").map(|s: &str| s.trim_start_matches('\n')), // Trim leading newlines
+        "'''",
+    )
+    .map(Value::String)
+    .parse_next(input)
 }
 
 /// Parses an integer value
