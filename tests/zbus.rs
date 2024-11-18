@@ -98,6 +98,42 @@ fn zbus() {
         })
         .unwrap();
     assert_eq!(*version, "1.1.1");
+
+    // Now array of tables
+    let bench = match parsed_map.get("bench") {
+        Some(Value::Array(bench)) => bench.get(0),
+        _ => None,
+    }
+    .and_then(|b| match b {
+        Value::Table(b) => Some(b),
+        _ => None,
+    })
+    .unwrap();
+    assert_eq!(bench.get("name").unwrap(), &Value::String("benchmarks"));
+    assert_eq!(bench.get("harness").unwrap(), &Value::Boolean(false));
+
+    // Finally, the examples
+    let examples = match parsed_map.get("example") {
+        Some(Value::Array(example)) => example,
+        _ => panic!(),
+    };
+    let names = ["screen-brightness", "screen-brightness2"];
+    let paths = [
+        "examples/screen-brightness.rs",
+        "examples/screen-brightness2.rs",
+    ];
+    for (i, example) in examples.iter().enumerate() {
+        let example = match example {
+            Value::Table(e) => e,
+            _ => panic!(),
+        };
+        assert_eq!(example.get("name").unwrap(), &Value::String(names[i]));
+        assert_eq!(example.get("path").unwrap(), &Value::String(paths[i]));
+        assert_eq!(
+            example.get("required-features").unwrap(),
+            &Value::Array(vec![Value::String("blocking-api")])
+        );
+    }
 }
 
 const CARGO_TOML: &'static str = r#"
@@ -264,5 +300,11 @@ const CARGO_TOML: &'static str = r#"
     [[example]]
     name = "screen-brightness"
     path = "examples/screen-brightness.rs"
+    required-features = ["blocking-api"]
+
+    # No such example in zbus' Cargo.toml but we want a case of > 1 entry in an array of tables.
+    [[example]]
+    name = "screen-brightness2"
+    path = "examples/screen-brightness2.rs"
     required-features = ["blocking-api"]
 "#;

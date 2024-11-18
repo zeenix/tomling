@@ -2,7 +2,7 @@
 
 extern crate alloc;
 
-use alloc::{collections::BTreeMap, format, vec::Vec};
+use alloc::{collections::BTreeMap, format, vec, vec::Vec};
 use winnow::{
     ascii::{multispace1, space0},
     combinator::{alt, delimited, opt, repeat, separated, separated_pair, terminated},
@@ -15,31 +15,57 @@ use winnow::{
 /// Parse a TOML document.
 pub fn parse<'i>(mut input: &'i str) -> Result<TomlMap<'i>, ()> {
     let key_value = parse_key_value.map(|(keys, value)| (None, keys, value));
-    let table_header =
-        parse_table_header.map(|header| (Some(header), Vec::new(), Value::Table(BTreeMap::new())));
+    let table_header = parse_table_header.map(|(header, is_array)| {
+        (
+            Some((header, is_array)),
+            Vec::new(),
+            Value::Table(BTreeMap::new()),
+        )
+    });
     let whitespace = multispace1.map(|_| (None, Vec::new(), Value::Table(BTreeMap::new())));
     let comment = parse_comment.map(|_| (None, Vec::new(), Value::Table(BTreeMap::new())));
     let line_parser = alt((table_header, key_value, whitespace, comment));
 
     repeat(1.., line_parser)
         .fold(
-            || (None, BTreeMap::new()),
-            |(current_table, mut map), (header, keys, value)| {
-                if header.is_some() {
-                    (header, map)
+            || (None, BTreeMap::<&'i str, _>::new()),
+            |(mut current_table, mut map), (header, keys, value)| {
+                if let Some((header, is_array)) = header {
+                    if is_array {
+                        // Handle array of tables ([[table]])
+                        let key = *header.last().expect("Header should not be empty");
+                        let entry = map.entry(key).or_insert_with(|| Value::Array(vec![]));
+                        if let Value::Array(array) = entry {
+                            // Append a new empty table to the array
+                            let new_table = BTreeMap::new();
+                            array.push(Value::Table(new_table));
+
+                            // Update current_table to reference the new table
+                            current_table = Some(vec![key]);
+                        }
+                    } else {
+                        // Handle regular table ([table]) with dotted keys
+                        current_table = Some(header);
+                    }
                 } else if !keys.is_empty() {
                     if let Some(ref table) = current_table {
-                        let mut full_key = table.clone();
-                        full_key.extend(keys);
-                        insert_nested_key(&mut map, &full_key, value);
+                        if let Some(Value::Array(array)) = map.get_mut(table[0]) {
+                            // Insert into the most recent table in the array
+                            if let Some(Value::Table(last_table)) = array.last_mut() {
+                                insert_nested_key(last_table, &keys, value);
+                            }
+                        } else {
+                            // Insert into a regular table
+                            let mut full_key = table.clone();
+                            full_key.extend(keys);
+                            insert_nested_key(&mut map, &full_key, value);
+                        }
                     } else {
+                        // Global key-value pair
                         insert_nested_key(&mut map, &keys, value);
                     }
-
-                    (current_table, map)
-                } else {
-                    (current_table, map)
                 }
+                (current_table, map)
             },
         )
         .map(|(_, map)| map)
@@ -61,8 +87,14 @@ pub enum Value<'a> {
 pub type TomlMap<'a> = BTreeMap<&'a str, Value<'a>>;
 
 /// Parses a table header (e.g., `[dependencies]`)
-fn parse_table_header<'i>(input: &mut &'i str) -> PResult<Vec<&'i str>, InputError<&'i str>> {
-    delimited('[', parse_dotted_key, ']').parse_next(input)
+fn parse_table_header<'i>(
+    input: &mut &'i str,
+) -> PResult<(Vec<&'i str>, bool), InputError<&'i str>> {
+    alt((
+        delimited("[[", parse_dotted_key, "]]").map(|keys| (keys, true)), // Array of tables
+        delimited('[', parse_dotted_key, ']').map(|keys| (keys, false)),  // Regular table
+    ))
+    .parse_next(input)
 }
 
 /// Parses a comment.
