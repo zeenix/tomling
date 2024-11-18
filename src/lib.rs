@@ -84,9 +84,18 @@ fn parse_dotted_key<'i>(input: &mut &'i str) -> PResult<Vec<&'i str>, InputError
 
 /// Parses a key (alphanumeric or underscores)
 fn parse_key<'i>(input: &mut &'i str) -> PResult<&'i str, InputError<&'i str>> {
+    // We don't use `parse_string` here beecause in the future that will also accept multiline
+    // strings and we don't want that here.
+    let string_key = alt((parse_basic_string, parse_literal_string)).map(|s| match s {
+        Value::String(s) => s,
+        _ => unreachable!(),
+    });
     delimited(
         space0,
-        take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '-'),
+        alt((
+            string_key,
+            take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '-'),
+        )),
         space0,
     )
     .parse_next(input)

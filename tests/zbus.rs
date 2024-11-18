@@ -49,6 +49,55 @@ fn zbus() {
             Value::String("tracing"),
         ])
     );
+
+    // cfg-using dependencies
+    let target = match parsed_map.get("target") {
+        Some(Value::Table(target)) => target,
+        _ => panic!(),
+    };
+    // Nix
+    let nix = target
+        .get("cfg(unix)")
+        .and_then(|c| match c {
+            Value::Table(c) => c.get("dependencies"),
+            _ => None,
+        })
+        .and_then(|d| match d {
+            Value::Table(d) => d.get("nix"),
+            _ => None,
+        })
+        .and_then(|n| match n {
+            Value::Table(n) => Some(n),
+            _ => panic!(),
+        })
+        .unwrap();
+    assert_eq!(nix.get("version").unwrap(), &Value::String("0.29"));
+    assert_eq!(nix.get("default-features").unwrap(), &Value::Boolean(false));
+    assert_eq!(
+        nix.get("features").unwrap(),
+        &Value::Array(vec![
+            Value::String("socket"),
+            Value::String("uio"),
+            Value::String("user"),
+        ])
+    );
+    // async-recursion
+    let version = target
+        .get("cfg(any(target_os = \"macos\", windows))")
+        .and_then(|c| match c {
+            Value::Table(c) => c.get("dependencies"),
+            _ => None,
+        })
+        .and_then(|d| match d {
+            Value::Table(d) => d.get("async-recursion"),
+            _ => None,
+        })
+        .and_then(|a| match a {
+            Value::String(a) => Some(a),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!(*version, "1.1.1");
 }
 
 const CARGO_TOML: &'static str = r#"
