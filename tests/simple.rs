@@ -45,7 +45,11 @@ fn simple_cargo_toml() {
                     serde.insert("version", Value::String("1.0"));
                     serde.insert(
                         "features",
-                        Value::Array(vec![Value::String("std"), Value::String("derive")]),
+                        Value::Array(
+                            [Value::String("std"), Value::String("derive")]
+                                .into_iter()
+                                .collect(),
+                        ),
                     );
                     serde
                 }),
@@ -58,7 +62,10 @@ fn simple_cargo_toml() {
         "features",
         Value::Table({
             let mut features = Table::new();
-            features.insert("default", Value::Array(vec![Value::String("serde")]));
+            features.insert(
+                "default",
+                Value::Array([Value::String("serde")].into_iter().collect()),
+            );
             features
         }),
     );

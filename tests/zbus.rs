@@ -27,7 +27,7 @@ fn zbus() {
     assert_eq!(serde.get("version").unwrap(), &Value::String("1.0.200"));
     assert_eq!(
         serde.get("features").unwrap(),
-        &Value::Array(vec![Value::String("derive")])
+        &Value::Array([Value::String("derive")].into_iter().collect())
     );
     // Tokio
     let tokio = match dependencies.get("tokio").unwrap() {
@@ -38,16 +38,20 @@ fn zbus() {
     assert_eq!(tokio.get("optional").unwrap(), &Value::Boolean(true));
     assert_eq!(
         tokio.get("features").unwrap(),
-        &Value::Array(vec![
-            Value::String("rt"),
-            Value::String("net"),
-            Value::String("time"),
-            Value::String("fs"),
-            Value::String("io-util"),
-            Value::String("process"),
-            Value::String("sync"),
-            Value::String("tracing"),
-        ])
+        &Value::Array(
+            [
+                Value::String("rt"),
+                Value::String("net"),
+                Value::String("time"),
+                Value::String("fs"),
+                Value::String("io-util"),
+                Value::String("process"),
+                Value::String("sync"),
+                Value::String("tracing"),
+            ]
+            .into_iter()
+            .collect()
+        )
     );
 
     // cfg-using dependencies
@@ -75,11 +79,15 @@ fn zbus() {
     assert_eq!(nix.get("default-features").unwrap(), &Value::Boolean(false));
     assert_eq!(
         nix.get("features").unwrap(),
-        &Value::Array(vec![
-            Value::String("socket"),
-            Value::String("uio"),
-            Value::String("user"),
-        ])
+        &Value::Array(
+            [
+                Value::String("socket"),
+                Value::String("uio"),
+                Value::String("user"),
+            ]
+            .into_iter()
+            .collect()
+        )
     );
     // async-recursion
     let version = target
@@ -131,7 +139,7 @@ fn zbus() {
         assert_eq!(example.get("path").unwrap(), &Value::String(paths[i]));
         assert_eq!(
             example.get("required-features").unwrap(),
-            &Value::Array(vec![Value::String("blocking-api")])
+            &Value::Array([Value::String("blocking-api")].into_iter().collect())
         );
     }
 }

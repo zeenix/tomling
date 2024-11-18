@@ -1,4 +1,4 @@
-use crate::{Table, Value};
+use crate::{Array, Table, Value};
 
 use alloc::{format, vec, vec::Vec};
 use winnow::{
@@ -32,7 +32,7 @@ pub fn parse<'i>(mut input: &'i str) -> Result<Table<'i>, ()> {
                     if is_array {
                         // Handle array of tables ([[table]])
                         let key = *header.last().expect("Header should not be empty");
-                        let entry = map.entry(key).or_insert_with(|| Value::Array(vec![]));
+                        let entry = map.entry(key).or_insert_with(|| Value::Array(Array::new()));
                         if let Value::Array(array) = entry {
                             // Append a new empty table to the array
                             let new_table = Table::new();
@@ -229,7 +229,7 @@ fn parse_array<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str
         ']',
     )
     .map(|(values, value): (Vec<_>, _)| {
-        let mut values: Vec<_> = values.into_iter().filter_map(|x| x).collect();
+        let mut values: Array = values.into_iter().filter_map(|x| x).collect();
         if let Some(value) = value {
             values.push(value);
         }

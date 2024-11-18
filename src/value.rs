@@ -1,6 +1,4 @@
-use alloc::vec::Vec;
-
-use crate::Table;
+use crate::{Array, Table};
 
 /// A TOML value.
 #[derive(Debug, PartialEq)]
@@ -9,6 +7,6 @@ pub enum Value<'a> {
     Integer(i64),
     Float(f64),
     Boolean(bool),
-    Array(Vec<Value<'a>>),
+    Array(Array<'a>),
     Table(Table<'a>),
 }
