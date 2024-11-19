@@ -79,6 +79,112 @@ fn tokio() {
     assert_eq!(*version, "0.8.0");
 }
 
+#[cfg(feature = "serde")]
+#[test]
+fn tokio_serde() {
+    // Make use of serde derives
+    use serde::Deserialize;
+
+    #[derive(Debug, Deserialize)]
+    struct CargoToml {
+        package: Package,
+        dependencies: std::collections::BTreeMap<String, Dependency>,
+        #[serde(rename = "dev-dependencies")]
+        dev_dependencies: std::collections::BTreeMap<String, Dependency>,
+        #[serde(rename = "target")]
+        targets: std::collections::BTreeMap<String, Target>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct Package {
+        name: String,
+        version: String,
+        edition: String,
+    }
+
+    #[derive(Debug, Deserialize, PartialEq)]
+    #[serde(untagged)]
+    enum Dependency {
+        VersionOnly(String),
+        Full(FullDependency),
+    }
+
+    #[derive(Debug, Deserialize, PartialEq)]
+    struct FullDependency {
+        version: String,
+        optional: Option<bool>,
+        features: Option<Vec<String>>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct Target {
+        dependencies: Option<std::collections::BTreeMap<String, Dependency>>,
+        #[serde(rename = "dev-dependencies")]
+        dev_dependencies: Option<std::collections::BTreeMap<String, Dependency>>,
+    }
+
+    let table: CargoToml = tomling::from_str(CARGO_TOML).unwrap();
+    assert_eq!(table.package.name, "tokio");
+    assert_eq!(table.package.version, "1.41.1");
+    assert_eq!(table.package.edition, "2021");
+
+    let bytes = match table.dependencies.get("bytes").unwrap() {
+        Dependency::Full(bytes) => bytes,
+        _ => panic!(),
+    };
+    assert_eq!(bytes.version, "1.0.0");
+    assert_eq!(bytes.optional, Some(true));
+
+    let socket2 = table
+        .targets
+        .get("cfg(not(target_family = \"wasm\"))")
+        .unwrap()
+        .dependencies
+        .as_ref()
+        .unwrap()
+        .get("socket2")
+        .unwrap();
+    assert_eq!(
+        socket2,
+        &Dependency::Full(FullDependency {
+            version: "0.5.5".to_string(),
+            optional: Some(true),
+            features: Some(vec!["all".to_string()]),
+        })
+    );
+
+    let tokio_test = table.dev_dependencies.get("tokio-test").unwrap();
+    assert_eq!(
+        tokio_test,
+        &Dependency::Full(FullDependency {
+            version: "0.4.0".to_string(),
+            optional: None,
+            features: None,
+        })
+    );
+
+    let windows_sys = table
+        .targets
+        .get("cfg(windows)")
+        .unwrap()
+        .dev_dependencies
+        .as_ref()
+        .unwrap()
+        .get("windows-sys")
+        .unwrap();
+    assert_eq!(
+        windows_sys,
+        &Dependency::Full(FullDependency {
+            version: "0.52".to_string(),
+            optional: None,
+            features: Some(vec![
+                "Win32_Foundation".to_string(),
+                "Win32_Security_Authorization".to_string()
+            ]),
+        })
+    );
+}
+
 const CARGO_TOML: &'static str = r#"
 [package]
 name = "tokio"

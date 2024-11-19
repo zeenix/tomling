@@ -10,3 +10,9 @@ winnow = { version = "0.6.20", default-features = false, features = [
     "simd",
 ] }
 serde = { version = "1.0.215", default-features = false, optional = true }
+
+[dev-dependencies]
+serde = { version = "1.0.215", default-features = false, features = [
+    "derive",
+    "alloc",
+] }

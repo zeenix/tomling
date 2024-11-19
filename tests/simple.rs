@@ -53,6 +53,73 @@ fn simple_cargo_toml() {
     assert_eq!(parsed_map, map);
 }
 
+#[cfg(feature = "serde")]
+#[test]
+fn simple_cargo_toml_serde() {
+    // Make use of serde derives
+    use serde::Deserialize;
+    use tomling::from_str;
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct Package<'a> {
+        name: &'a str,
+        version: &'a str,
+        edition: &'a str,
+    }
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct Dependencies<'a> {
+        #[serde(borrow)]
+        serde: Serde<'a>,
+        regex: Regex,
+    }
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct Serde<'a> {
+        version: &'a str,
+        features: Vec<&'a str>,
+    }
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct Regex(String);
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct Features<'a> {
+        #[serde(borrow)]
+        default: Vec<&'a str>,
+    }
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct CargoToml<'a> {
+        #[serde(borrow)]
+        package: Package<'a>,
+        dependencies: Dependencies<'a>,
+        features: Features<'a>,
+    }
+
+    let table = from_str::<CargoToml>(CARGO_TOML).unwrap();
+    assert_eq!(
+        table,
+        CargoToml {
+            package: Package {
+                name: "example",
+                version: "0.1.0",
+                edition: "2021",
+            },
+            dependencies: Dependencies {
+                serde: Serde {
+                    version: "1.0",
+                    features: vec!["std", "derive"],
+                },
+                regex: Regex("1.5".to_string()),
+            },
+            features: Features {
+                default: vec!["serde"],
+            },
+        }
+    );
+}
+
 const CARGO_TOML: &'static str = r#"
 [package]
 name = "example"
