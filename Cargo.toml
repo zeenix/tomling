@@ -4,6 +4,9 @@ description = "A simple TOML parser"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["serde"]
+
 [dependencies]
 winnow = { version = "0.6.20", default-features = false, features = [
     "alloc",
