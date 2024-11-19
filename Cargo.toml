@@ -9,3 +9,4 @@ winnow = { version = "0.6.20", default-features = false, features = [
     "alloc",
     "simd",
 ] }
+serde = { version = "1.0.215", default-features = false, optional = true }
