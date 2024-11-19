@@ -10,3 +10,5 @@ pub mod array;
 pub use array::Array;
 mod parse;
 pub use parse::parse;
+#[cfg(feature = "serde")]
+mod serde;
