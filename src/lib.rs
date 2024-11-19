@@ -12,3 +12,5 @@ mod parse;
 pub use parse::parse;
 #[cfg(feature = "serde")]
 mod serde;
+#[cfg(feature = "serde")]
+pub use serde::from_str;

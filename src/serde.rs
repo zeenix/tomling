@@ -7,6 +7,16 @@ use serde::de::{
     self, DeserializeSeed, Deserializer, IntoDeserializer, MapAccess, SeqAccess, Visitor,
 };
 
+/// Deserialize a TOML document from a string.
+pub fn from_str<'de, T>(s: &'de str) -> Result<T, de::value::Error>
+where
+    T: de::Deserialize<'de>,
+{
+    let value = crate::parse(s).map_err(|_| de::Error::custom("Invalid TOML"))?;
+
+    T::deserialize(&Value::Table(value))
+}
+
 impl<'de, 'a> Deserializer<'de> for &'a Value<'de> {
     type Error = de::value::Error;
 
