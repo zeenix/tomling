@@ -2,27 +2,6 @@
 fn simple_cargo_toml() {
     use tomling::{parse, Table, Value};
 
-    let cargo_toml = r#"
-        [package]
-        name = "example"
-        version = "0.1.0"
-        edition = "2021"
-
-        # This is a comment.
-        [dependencies]
-        # a comment.
-        serde = { version = "1.0", features = [
-            # A comment here.
-            "std",
-            # A multiline
-            # comment here.
-            "derive", # and here.
-        ] }
-        regex = "1.5" # This is also a comment.
-
-        [features]
-        default = ["serde"]
-    "#;
     let mut map = Table::new();
     map.insert(
         "package",
@@ -70,6 +49,28 @@ fn simple_cargo_toml() {
         }),
     );
 
-    let parsed_map = parse(cargo_toml).unwrap();
+    let parsed_map = parse(CARGO_TOML).unwrap();
     assert_eq!(parsed_map, map);
 }
+
+const CARGO_TOML: &'static str = r#"
+[package]
+name = "example"
+version = "0.1.0"
+edition = "2021"
+
+# This is a comment.
+[dependencies]
+# a comment.
+serde = { version = "1.0", features = [
+    # A comment here.
+    "std",
+    # A multiline
+    # comment here.
+    "derive", # and here.
+] }
+regex = "1.5" # This is also a comment.
+
+[features]
+default = ["serde"]
+"#;
