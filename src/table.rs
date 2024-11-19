@@ -32,8 +32,8 @@ impl<'a> Table<'a> {
     }
 
     /// Get an iterator over the key-value pairs.
-    pub fn iter(&self) -> impl Iterator<Item = (&'a str, &Value<'a>)> {
-        self.0.iter().map(|(k, v)| (*k, v))
+    pub fn iter(&self) -> Iter<'_, 'a> {
+        Iter::new(self)
     }
 
     pub(crate) fn entry(
@@ -54,5 +54,26 @@ impl<'a> FromIterator<(&'a str, Value<'a>)> for Table<'a> {
         I: IntoIterator<Item = (&'a str, Value<'a>)>,
     {
         Self(iter.into_iter().collect())
+    }
+}
+
+#[derive(Debug)]
+pub struct Iter<'i, 'a> {
+    iter: alloc::collections::btree_map::Iter<'i, &'a str, Value<'a>>,
+}
+
+impl<'t, 'a> Iter<'t, 'a> {
+    fn new(table: &'t Table<'a>) -> Iter<'t, 'a> {
+        Iter {
+            iter: table.0.iter(),
+        }
+    }
+}
+
+impl<'i, 'a> Iterator for Iter<'i, 'a> {
+    type Item = (&'a str, &'i Value<'a>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|(k, v)| (*k, v))
     }
 }

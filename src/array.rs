@@ -37,6 +37,11 @@ impl<'a> Array<'a> {
     pub fn as_slice(&self) -> &[Value<'a>] {
         self.0.as_slice()
     }
+
+    /// An iterator over the array.
+    pub fn iter(&self) -> Iter<'_, 'a> {
+        Iter::new(self)
+    }
 }
 
 impl<'a> Deref for Array<'a> {
@@ -59,5 +64,26 @@ impl<'a> FromIterator<Value<'a>> for Array<'a> {
         I: IntoIterator<Item = Value<'a>>,
     {
         Self(iter.into_iter().collect())
+    }
+}
+
+#[derive(Debug)]
+pub struct Iter<'i, 'a> {
+    iter: alloc::slice::Iter<'i, Value<'a>>,
+}
+
+impl<'i, 'a> Iter<'i, 'a> {
+    fn new(array: &'i Array<'a>) -> Iter<'i, 'a> {
+        Iter {
+            iter: array.0.iter(),
+        }
+    }
+}
+
+impl<'i, 'a> Iterator for Iter<'i, 'a> {
+    type Item = &'i Value<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
     }
 }
