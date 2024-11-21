@@ -169,7 +169,10 @@ fn parse_multiline_basic_string<'i>(
 ) -> PResult<Value<'i>, InputError<&'i str>> {
     delimited(
         "\"\"\"",
-        take_until(0.., "\"\"\"").map(|s: &str| s.trim_start_matches('\n')), // Trim leading newlines
+        take_until(0.., "\"\"\"").map(|s: &str| {
+            // Trim leading newlines.
+            s.trim_start_matches('\n')
+        }),
         "\"\"\"",
     )
     .map(Value::String)
