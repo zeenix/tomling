@@ -1,17 +1,17 @@
-use crate::{Array, Table, Value};
+use crate::{Array, Error, ParseError, Table, Value};
 
 use alloc::{format, vec, vec::Vec};
 use winnow::{
     ascii::{multispace1, space0},
     combinator::{alt, delimited, opt, repeat, separated, separated_pair, terminated},
-    error::InputError,
+    error::ContextError,
     stream::AsChar,
     token::{take_until, take_while},
     PResult, Parser,
 };
 
 /// Parse a TOML document.
-pub fn parse(input: &str) -> Result<Table<'_>, ()> {
+pub fn parse(input: &str) -> Result<Table<'_>, Error> {
     let key_value = parse_key_value.map(|(keys, value)| (None, keys, value));
     let table_header = parse_table_header.map(|(header, is_array)| {
         (
@@ -68,13 +68,12 @@ pub fn parse(input: &str) -> Result<Table<'_>, ()> {
         )
         .map(|(_, map)| map)
         .parse(input)
-        .map_err(|_| ())
+        .map_err(|e| ParseError::new(e.into_inner()))
+        .map_err(Error::Parse)
 }
 
 /// Parses a table header (e.g., `[dependencies]`)
-fn parse_table_header<'i>(
-    input: &mut &'i str,
-) -> PResult<(Vec<&'i str>, bool), InputError<&'i str>> {
+fn parse_table_header<'i>(input: &mut &'i str) -> PResult<(Vec<&'i str>, bool), ContextError> {
     alt((
         delimited("[[", parse_dotted_key, "]]").map(|keys| (keys, true)), // Array of tables
         delimited('[', parse_dotted_key, ']').map(|keys| (keys, false)),  // Regular table
@@ -83,24 +82,22 @@ fn parse_table_header<'i>(
 }
 
 /// Parses a comment.
-fn parse_comment<'i>(input: &mut &'i str) -> PResult<&'i str, InputError<&'i str>> {
+fn parse_comment<'i>(input: &mut &'i str) -> PResult<&'i str, ContextError> {
     delimited('#', take_until(0.., '\n'), '\n').parse_next(input)
 }
 
 /// Parses a single key-value pair
-fn parse_key_value<'i>(
-    input: &mut &'i str,
-) -> PResult<(Vec<&'i str>, Value<'i>), InputError<&'i str>> {
+fn parse_key_value<'i>(input: &mut &'i str) -> PResult<(Vec<&'i str>, Value<'i>), ContextError> {
     separated_pair(parse_dotted_key, '=', parse_value).parse_next(input)
 }
 
 /// Parses a dotted or single key
-fn parse_dotted_key<'i>(input: &mut &'i str) -> PResult<Vec<&'i str>, InputError<&'i str>> {
+fn parse_dotted_key<'i>(input: &mut &'i str) -> PResult<Vec<&'i str>, ContextError> {
     separated(1.., parse_key, '.').parse_next(input)
 }
 
 /// Parses a key (alphanumeric or underscores)
-fn parse_key<'i>(input: &mut &'i str) -> PResult<&'i str, InputError<&'i str>> {
+fn parse_key<'i>(input: &mut &'i str) -> PResult<&'i str, ContextError> {
     // We don't use `parse_string` here beecause in the future that will also accept multiline
     // strings and we don't want that here.
     let string_key = alt((parse_basic_string, parse_literal_string)).map(|s| match s {
@@ -119,7 +116,7 @@ fn parse_key<'i>(input: &mut &'i str) -> PResult<&'i str, InputError<&'i str>> {
 }
 
 /// Parses a value (string, integer, float, boolean, array, or table)
-fn parse_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
+fn parse_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     delimited(
         space0,
         // FIXME: Use `dispatch!` to make it more efficient.
@@ -136,7 +133,7 @@ fn parse_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str
 }
 
 /// Parses a string value enclosed in quotes
-fn parse_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
+fn parse_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     // TODO:
     // * Handle multiline basic and literal strings.
     // * Handle escape sequences.
@@ -150,23 +147,21 @@ fn parse_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i st
 }
 
 /// Parses a basic string value enclosed in quotes.
-fn parse_basic_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
+fn parse_basic_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     delimited('"', take_until(0.., '"'), '"')
         .map(Value::String)
         .parse_next(input)
 }
 
 /// Parses a literal string value enclosed in single quotes.
-fn parse_literal_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
+fn parse_literal_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     delimited('\'', take_until(0.., '\''), '\'')
         .map(Value::String)
         .parse_next(input)
 }
 
 /// Parses a multiline basic string value enclosed in triple quotes.
-fn parse_multiline_basic_string<'i>(
-    input: &mut &'i str,
-) -> PResult<Value<'i>, InputError<&'i str>> {
+fn parse_multiline_basic_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     delimited(
         "\"\"\"",
         take_until(0.., "\"\"\"").map(|s: &str| {
@@ -180,9 +175,7 @@ fn parse_multiline_basic_string<'i>(
 }
 
 /// Parses a literal multiline string value enclosed in triple single quotes (`'''`).
-fn parse_multiline_literal_string<'i>(
-    input: &mut &'i str,
-) -> PResult<Value<'i>, InputError<&'i str>> {
+fn parse_multiline_literal_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     delimited(
         "'''",
         take_until(0.., "'''").map(|s: &str| s.trim_start_matches('\n')), // Trim leading newlines
@@ -193,14 +186,14 @@ fn parse_multiline_literal_string<'i>(
 }
 
 /// Parses an integer value
-fn parse_integer<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
+fn parse_integer<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     take_while(1.., |c: char| c.is_ascii_digit())
         .map(|s: &str| Value::Integer(s.parse().unwrap()))
         .parse_next(input)
 }
 
 /// Parses a float value
-fn parse_float<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
+fn parse_float<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     alt((
         separated_pair(
             take_while(1.., AsChar::is_dec_digit),
@@ -216,7 +209,7 @@ fn parse_float<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str
 }
 
 /// Parses a boolean value
-fn parse_boolean<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
+fn parse_boolean<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     alt((
         "true".map(|_| Value::Boolean(true)),
         "false".map(|_| Value::Boolean(false)),
@@ -225,7 +218,7 @@ fn parse_boolean<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i s
 }
 
 /// Parses an array of values
-fn parse_array<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
+fn parse_array<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     delimited(
         '[',
         (repeat(0.., parse_multiline_array_values), opt(parse_value)),
@@ -243,7 +236,7 @@ fn parse_array<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str
 
 fn parse_multiline_array_values<'i>(
     input: &mut &'i str,
-) -> PResult<Option<Value<'i>>, InputError<&'i str>> {
+) -> PResult<Option<Value<'i>>, ContextError> {
     alt((
         multispace1.map(|_| None),
         parse_comment.map(|_| None),
@@ -253,7 +246,7 @@ fn parse_multiline_array_values<'i>(
 }
 
 /// Parses an inline table
-fn parse_inline_table<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str>> {
+fn parse_inline_table<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     delimited(
         '{',
         separated(0.., separated_pair(parse_key, '=', parse_value), ','),

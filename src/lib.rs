@@ -25,3 +25,5 @@ mod serde;
 pub use serde::from_str;
 #[cfg(feature = "cargo-toml")]
 pub mod cargo;
+mod error;
+pub use error::{Error, ParseError};
