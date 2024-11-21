@@ -13,7 +13,7 @@ jobs:
       RUSTFLAGS: -D warnings
       RUST_BACKTRACE: full
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
@@ -28,7 +28,7 @@ jobs:
       RUSTFLAGS: -D warnings
       MSRV: 1.68.0
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.MSRV }}
