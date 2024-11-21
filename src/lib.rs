@@ -1,6 +1,14 @@
 //! A simple TOML parser crate.
 
 #![no_std]
+#![forbid(unsafe_code)]
+#![deny(
+    missing_debug_implementations,
+    nonstandard_style,
+    rust_2018_idioms,
+    missing_docs
+)]
+#![warn(unreachable_pub)]
 
 extern crate alloc;
 
