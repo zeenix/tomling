@@ -182,12 +182,12 @@ fn zbus_serde() {
     );
 
     // The benchmarks.
-    let bench = manifest.benches().unwrap().get(0).unwrap();
+    let bench = manifest.benches().unwrap().first().unwrap();
     assert_eq!(bench.name(), "benchmarks");
     assert!(!bench.harness().unwrap());
 }
 
-const CARGO_TOML: &'static str = r#"
+const CARGO_TOML: &str = r#"
     [package]
     name = "zbus"
     version = "5.1.1"

@@ -158,7 +158,7 @@ fn simple_cargo_toml_serde() {
     assert_eq!(binary.path(), Some("src/bin/my-binary.rs"));
 }
 
-const CARGO_TOML: &'static str = r#"
+const CARGO_TOML: &str = r#"
 [package]
 name = "example"
 version = "0.1.0"

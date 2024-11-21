@@ -11,7 +11,7 @@ use winnow::{
 };
 
 /// Parse a TOML document.
-pub fn parse<'i>(mut input: &'i str) -> Result<Table<'i>, ()> {
+pub fn parse(input: &str) -> Result<Table<'_>, ()> {
     let key_value = parse_key_value.map(|(keys, value)| (None, keys, value));
     let table_header = parse_table_header.map(|(header, is_array)| {
         (
@@ -67,7 +67,7 @@ pub fn parse<'i>(mut input: &'i str) -> Result<Table<'i>, ()> {
             },
         )
         .map(|(_, map)| map)
-        .parse(&mut input)
+        .parse(input)
         .map_err(|_| ())
 }
 
@@ -232,7 +232,7 @@ fn parse_array<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str
         ']',
     )
     .map(|(values, value): (Vec<_>, _)| {
-        let mut values: Array<'i> = values.into_iter().filter_map(|x| x).collect();
+        let mut values: Array<'i> = values.into_iter().flatten().collect();
         if let Some(value) = value {
             values.push(value);
         }

@@ -41,7 +41,7 @@ impl<'a, 'de: 'a> Deserialize<'de> for Author<'a> {
         };
 
         let s = <&'de str>::deserialize(deserializer)?;
-        let (name, email) = parse_author(s).unwrap_or_else(|_| (s, None));
+        let (name, email) = parse_author(s).unwrap_or((s, None));
 
         Ok(Author { name, email })
     }

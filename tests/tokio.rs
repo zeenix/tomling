@@ -145,7 +145,7 @@ fn tokio_serde() {
     );
 }
 
-const CARGO_TOML: &'static str = r#"
+const CARGO_TOML: &str = r#"
 [package]
 name = "tokio"
 # When releasing to crates.io:
