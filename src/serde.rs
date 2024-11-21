@@ -4,7 +4,8 @@ use crate::{
     Value,
 };
 use serde::de::{
-    self, DeserializeSeed, Deserializer, IntoDeserializer, MapAccess, SeqAccess, Visitor,
+    self, value::BorrowedStrDeserializer, DeserializeSeed, Deserializer, IntoDeserializer,
+    MapAccess, SeqAccess, Visitor,
 };
 
 /// Deserialize a TOML document from a string.
@@ -183,7 +184,8 @@ impl<'de, 'a> MapAccess<'de> for MapDeserializer<'de, 'a> {
     {
         if let Some((key, value)) = self.iter.next() {
             self.value = Some(value);
-            seed.deserialize((*key).into_deserializer()).map(Some)
+            seed.deserialize((BorrowedStrDeserializer::new(key)).into_deserializer())
+                .map(Some)
         } else {
             Ok(None)
         }
