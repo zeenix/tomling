@@ -144,6 +144,49 @@ fn zbus() {
     }
 }
 
+#[cfg(feature = "cargo-toml")]
+#[test]
+fn zbus_serde() {
+    use tomling::cargo::{Dependency, LibraryType, Manifest, RustEdition};
+
+    let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
+
+    assert_eq!(manifest.package().name(), "zbus");
+    assert_eq!(manifest.package().version(), "5.1.1");
+    assert_eq!(manifest.package().edition().unwrap(), RustEdition::E2021);
+
+    let serde = match manifest.dependencies().unwrap().by_name("serde").unwrap() {
+        Dependency::Full(serde) => serde,
+        _ => panic!(),
+    };
+    assert_eq!(serde.version(), "1.0.200");
+    assert_eq!(serde.features(), Some(&["derive"][..]));
+
+    let tokio = match manifest.dependencies().unwrap().by_name("tokio").unwrap() {
+        Dependency::Full(tokio) => tokio,
+        _ => panic!(),
+    };
+    assert_eq!(tokio.version(), "1.37.0");
+    assert!(tokio.optional().unwrap());
+    assert_eq!(
+        tokio.features(),
+        Some(&["rt", "net", "time", "fs", "io-util", "process", "sync", "tracing"][..])
+    );
+
+    // The library section.
+    let lib = manifest.library().unwrap();
+    assert!(!lib.bench().unwrap());
+    assert_eq!(
+        lib.library_type().unwrap(),
+        &[LibraryType::Cdylib, LibraryType::Rlib]
+    );
+
+    // The benchmarks.
+    let bench = manifest.benches().unwrap().get(0).unwrap();
+    assert_eq!(bench.name(), "benchmarks");
+    assert!(!bench.harness().unwrap());
+}
+
 const CARGO_TOML: &'static str = r#"
     [package]
     name = "zbus"
@@ -300,6 +343,8 @@ const CARGO_TOML: &'static str = r#"
 
     [lib]
     bench = false
+    # Note: zbus' Cargo.toml doesn't have a `crate-type` specified.
+    crate-type = ["cdylib", "rlib"]
 
     [[bench]]
     name = "benchmarks"

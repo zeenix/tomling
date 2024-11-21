@@ -10,6 +10,18 @@ fn simple_cargo_toml() {
             package.insert("name", Value::String("example"));
             package.insert("version", Value::String("0.1.0"));
             package.insert("edition", Value::String("2021"));
+            package.insert("resolver", Value::String("2"));
+            package.insert(
+                "authors",
+                Value::Array(
+                    [
+                        Value::String("Alice Great <foo@bar.com>"),
+                        Value::String("Bob Less"),
+                    ]
+                    .into_iter()
+                    .collect(),
+                ),
+            );
             package
         }),
     );
@@ -38,6 +50,31 @@ fn simple_cargo_toml() {
         }),
     );
     map.insert(
+        "target",
+        Value::Table({
+            let mut target = Table::new();
+            target.insert(
+                "cfg(unix)",
+                Value::Table({
+                    let mut cfg_unix = Table::new();
+                    cfg_unix.insert(
+                        "build-dependencies",
+                        Value::Table({
+                            let mut build_dependencies = Table::new();
+                            build_dependencies.insert("cc", Value::String("1.0.3"));
+
+                            build_dependencies
+                        }),
+                    );
+
+                    cfg_unix
+                }),
+            );
+
+            target
+        }),
+    );
+    map.insert(
         "features",
         Value::Table({
             let mut features = Table::new();
@@ -48,76 +85,77 @@ fn simple_cargo_toml() {
             features
         }),
     );
+    map.insert(
+        "bin",
+        Value::Array(
+            [Value::Table({
+                let mut bin = Table::new();
+                bin.insert("name", Value::String("some-binary"));
+                bin.insert("path", Value::String("src/bin/my-binary.rs"));
+                bin
+            })]
+            .into_iter()
+            .collect(),
+        ),
+    );
 
     let parsed_map = parse(CARGO_TOML).unwrap();
     assert_eq!(parsed_map, map);
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "cargo-toml")]
 #[test]
 fn simple_cargo_toml_serde() {
-    // Make use of serde derives
-    use serde::Deserialize;
-    use tomling::from_str;
+    use tomling::cargo::{BuildDependency, Dependency, Manifest, ResolverVersion, RustEdition};
 
-    #[derive(Debug, PartialEq, Deserialize)]
-    struct Package<'a> {
-        name: &'a str,
-        version: &'a str,
-        edition: &'a str,
-    }
+    let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
-    #[derive(Debug, PartialEq, Deserialize)]
-    struct Dependencies<'a> {
-        #[serde(borrow)]
-        serde: Serde<'a>,
-        regex: Regex,
-    }
+    assert_eq!(manifest.package().name(), "example");
+    assert_eq!(manifest.package().version(), "0.1.0");
+    assert_eq!(manifest.package().edition().unwrap(), RustEdition::E2021);
+    assert_eq!(manifest.package().resolver().unwrap(), ResolverVersion::V2);
+    let authors = manifest.package().authors().unwrap();
+    let alice = &authors[0];
+    assert_eq!(alice.name(), "Alice Great");
+    assert_eq!(alice.email(), Some("foo@bar.com"));
+    let bob = &authors[1];
+    assert_eq!(bob.name(), "Bob Less");
+    assert_eq!(bob.email(), None);
 
-    #[derive(Debug, PartialEq, Deserialize)]
-    struct Serde<'a> {
-        version: &'a str,
-        features: Vec<&'a str>,
-    }
+    let serde = match manifest.dependencies().unwrap().by_name("serde").unwrap() {
+        Dependency::Full(serde) => serde,
+        _ => panic!(),
+    };
+    assert_eq!(serde.version(), "1.0");
+    assert_eq!(serde.features(), Some(&["std", "derive"][..]));
 
-    #[derive(Debug, PartialEq, Deserialize)]
-    struct Regex(String);
+    let regex = match manifest.dependencies().unwrap().by_name("regex").unwrap() {
+        Dependency::VersionOnly(regex) => *regex,
+        _ => panic!(),
+    };
+    assert_eq!(regex, "1.5");
 
-    #[derive(Debug, PartialEq, Deserialize)]
-    struct Features<'a> {
-        #[serde(borrow)]
-        default: Vec<&'a str>,
-    }
+    let cc = match manifest
+        .targets()
+        .unwrap()
+        .by_name("cfg(unix)")
+        .unwrap()
+        .build_dependencies()
+        .unwrap()
+        .by_name("cc")
+        .unwrap()
+    {
+        BuildDependency::VersionOnly(cc) => *cc,
+        _ => panic!(),
+    };
+    assert_eq!(cc, "1.0.3");
 
-    #[derive(Debug, PartialEq, Deserialize)]
-    struct CargoToml<'a> {
-        #[serde(borrow)]
-        package: Package<'a>,
-        dependencies: Dependencies<'a>,
-        features: Features<'a>,
-    }
+    let default = manifest.features().unwrap().by_name("default").unwrap();
+    assert_eq!(default, &["serde"]);
 
-    let table = from_str::<CargoToml>(CARGO_TOML).unwrap();
-    assert_eq!(
-        table,
-        CargoToml {
-            package: Package {
-                name: "example",
-                version: "0.1.0",
-                edition: "2021",
-            },
-            dependencies: Dependencies {
-                serde: Serde {
-                    version: "1.0",
-                    features: vec!["std", "derive"],
-                },
-                regex: Regex("1.5".to_string()),
-            },
-            features: Features {
-                default: vec!["serde"],
-            },
-        }
-    );
+    let binary = &manifest.binaries().unwrap()[0];
+    assert_eq!(binary.name(), "some-binary");
+    assert_eq!(binary.path(), Some("src/bin/my-binary.rs"));
 }
 
 const CARGO_TOML: &'static str = r#"
@@ -125,6 +163,8 @@ const CARGO_TOML: &'static str = r#"
 name = "example"
 version = "0.1.0"
 edition = "2021"
+authors = ["Alice Great <foo@bar.com>", "Bob Less"]
+resolver = "2"
 
 # This is a comment.
 [dependencies]
@@ -138,6 +178,14 @@ serde = { version = "1.0", features = [
 ] }
 regex = "1.5" # This is also a comment.
 
+[target.'cfg(unix)'.build-dependencies]
+cc = "1.0.3"
+
 [features]
 default = ["serde"]
+
+[[bin]]
+name = "some-binary"
+path = "src/bin/my-binary.rs"
+
 "#;

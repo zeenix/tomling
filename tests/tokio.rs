@@ -79,109 +79,69 @@ fn tokio() {
     assert_eq!(*version, "0.8.0");
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "cargo-toml")]
 #[test]
 fn tokio_serde() {
-    // Make use of serde derives
-    use serde::Deserialize;
+    use tomling::cargo::{Dependency, DevDependency, Manifest, RustEdition};
 
-    #[derive(Debug, Deserialize)]
-    struct CargoToml {
-        package: Package,
-        dependencies: std::collections::BTreeMap<String, Dependency>,
-        #[serde(rename = "dev-dependencies")]
-        dev_dependencies: std::collections::BTreeMap<String, Dependency>,
-        #[serde(rename = "target")]
-        targets: std::collections::BTreeMap<String, Target>,
-    }
+    let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
+    assert_eq!(manifest.package().name(), "tokio");
+    assert_eq!(manifest.package().version(), "1.41.1");
+    assert_eq!(manifest.package().edition().unwrap(), RustEdition::E2021);
 
-    #[derive(Debug, Deserialize)]
-    struct Package {
-        name: String,
-        version: String,
-        edition: String,
-    }
-
-    #[derive(Debug, Deserialize, PartialEq)]
-    #[serde(untagged)]
-    enum Dependency {
-        VersionOnly(String),
-        Full(FullDependency),
-    }
-
-    #[derive(Debug, Deserialize, PartialEq)]
-    struct FullDependency {
-        version: String,
-        optional: Option<bool>,
-        features: Option<Vec<String>>,
-    }
-
-    #[derive(Debug, Deserialize)]
-    struct Target {
-        dependencies: Option<std::collections::BTreeMap<String, Dependency>>,
-        #[serde(rename = "dev-dependencies")]
-        dev_dependencies: Option<std::collections::BTreeMap<String, Dependency>>,
-    }
-
-    let table: CargoToml = tomling::from_str(CARGO_TOML).unwrap();
-    assert_eq!(table.package.name, "tokio");
-    assert_eq!(table.package.version, "1.41.1");
-    assert_eq!(table.package.edition, "2021");
-
-    let bytes = match table.dependencies.get("bytes").unwrap() {
+    let bytes = match manifest.dependencies().unwrap().by_name("bytes").unwrap() {
         Dependency::Full(bytes) => bytes,
         _ => panic!(),
     };
-    assert_eq!(bytes.version, "1.0.0");
-    assert_eq!(bytes.optional, Some(true));
+    assert_eq!(bytes.version(), "1.0.0");
+    assert_eq!(bytes.optional(), Some(true));
 
-    let socket2 = table
-        .targets
-        .get("cfg(not(target_family = \"wasm\"))")
+    let socket2 = match manifest
+        .targets()
         .unwrap()
-        .dependencies
-        .as_ref()
+        .by_name("cfg(not(target_family = \"wasm\"))")
         .unwrap()
-        .get("socket2")
+        .dependencies()
+        .unwrap()
+        .by_name("socket2")
+        .unwrap()
+    {
+        Dependency::Full(s) => s,
+        _ => panic!(),
+    };
+    assert_eq!(socket2.version(), "0.5.5");
+    assert_eq!(socket2.optional(), Some(true));
+    assert_eq!(socket2.features(), Some(&["all"][..]));
+
+    let tokio_test = manifest
+        .dev_dependencies()
+        .unwrap()
+        .by_name("tokio-test")
         .unwrap();
-    assert_eq!(
-        socket2,
-        &Dependency::Full(FullDependency {
-            version: "0.5.5".to_string(),
-            optional: Some(true),
-            features: Some(vec!["all".to_string()]),
-        })
-    );
+    let tokio_test = match tokio_test {
+        DevDependency::Full(t) => t,
+        _ => panic!(),
+    };
+    assert_eq!(tokio_test.version(), "0.4.0");
+    assert_eq!(tokio_test.features(), None);
 
-    let tokio_test = table.dev_dependencies.get("tokio-test").unwrap();
-    assert_eq!(
-        tokio_test,
-        &Dependency::Full(FullDependency {
-            version: "0.4.0".to_string(),
-            optional: None,
-            features: None,
-        })
-    );
-
-    let windows_sys = table
-        .targets
-        .get("cfg(windows)")
+    let windows_sys = manifest
+        .targets()
         .unwrap()
-        .dev_dependencies
-        .as_ref()
+        .by_name("cfg(windows)")
         .unwrap()
-        .get("windows-sys")
+        .dev_dependencies()
+        .unwrap()
+        .by_name("windows-sys")
         .unwrap();
+    let windows_sys = match windows_sys {
+        DevDependency::Full(w) => w,
+        _ => panic!(),
+    };
+    assert_eq!(windows_sys.version(), "0.52");
     assert_eq!(
-        windows_sys,
-        &Dependency::Full(FullDependency {
-            version: "0.52".to_string(),
-            optional: None,
-            features: Some(vec![
-                "Win32_Foundation".to_string(),
-                "Win32_Security_Authorization".to_string()
-            ]),
-        })
+        windows_sys.features(),
+        Some(&["Win32_Foundation", "Win32_Security_Authorization"][..])
     );
 }
 
