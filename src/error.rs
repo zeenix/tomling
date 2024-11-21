@@ -8,7 +8,8 @@ pub enum Error {
     Parse(ParseError),
 }
 
-impl core::error::Error for Error {}
+// TODO: Uncomment this when we can bump the MSRV to 1.81:
+// impl core::error::Error for Error {}
 
 impl alloc::fmt::Display for Error {
     fn fmt(&self, f: &mut alloc::fmt::Formatter<'_>) -> alloc::fmt::Result {

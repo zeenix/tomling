@@ -22,7 +22,7 @@ pub use parse::parse;
 #[cfg(feature = "serde")]
 mod serde;
 #[cfg(feature = "serde")]
-pub use serde::from_str;
+pub use crate::serde::from_str;
 #[cfg(feature = "cargo-toml")]
 pub mod cargo;
 mod error;
