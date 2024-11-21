@@ -1,7 +1,7 @@
 use crate::{
     array::{self, Array},
     table::{self, Table},
-    Value,
+    Error, Value,
 };
 use serde::de::{
     self, value::BorrowedStrDeserializer, DeserializeSeed, Deserializer, IntoDeserializer,
@@ -9,17 +9,17 @@ use serde::de::{
 };
 
 /// Deserialize a TOML document from a string. Requires the `serde` feature.
-pub fn from_str<'de, T>(s: &'de str) -> Result<T, de::value::Error>
+pub fn from_str<'de, T>(s: &'de str) -> Result<T, Error>
 where
     T: de::Deserialize<'de>,
 {
-    let value = crate::parse(s).map_err(|_| de::Error::custom("Invalid TOML"))?;
+    let value = crate::parse(s)?;
 
     T::deserialize(&Value::Table(value))
 }
 
 impl<'de, 'a> Deserializer<'de> for &'a Value<'de> {
-    type Error = de::value::Error;
+    type Error = Error;
 
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
@@ -168,7 +168,7 @@ impl<'de, 'a> SeqDeserializer<'de, 'a> {
 }
 
 impl<'de, 'a> SeqAccess<'de> for SeqDeserializer<'de, 'a> {
-    type Error = de::value::Error;
+    type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
     where
@@ -195,7 +195,7 @@ impl<'de, 'a> MapDeserializer<'de, 'a> {
 }
 
 impl<'de, 'a> MapAccess<'de> for MapDeserializer<'de, 'a> {
-    type Error = de::value::Error;
+    type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
     where
