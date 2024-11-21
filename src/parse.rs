@@ -229,7 +229,7 @@ fn parse_array<'i>(input: &mut &'i str) -> PResult<Value<'i>, InputError<&'i str
         ']',
     )
     .map(|(values, value): (Vec<_>, _)| {
-        let mut values: Array = values.into_iter().filter_map(|x| x).collect();
+        let mut values: Array<'i> = values.into_iter().filter_map(|x| x).collect();
         if let Some(value) = value {
             values.push(value);
         }
