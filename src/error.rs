@@ -62,6 +62,7 @@ impl std::error::Error for ParseError {
     }
 }
 
+#[cfg(feature = "serde")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeserializeError {
     pub(crate) de: serde::de::value::Error,
@@ -83,6 +84,7 @@ impl From<serde::de::value::Error> for Error {
     }
 }
 
+#[cfg(feature = "serde")]
 impl alloc::fmt::Display for DeserializeError {
     fn fmt(&self, f: &mut alloc::fmt::Formatter<'_>) -> alloc::fmt::Result {
         write!(f, "{}", self.de)
