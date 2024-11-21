@@ -2,8 +2,8 @@
 
 [![Build Status](https://github.com/zeenix/tomling/actions/workflows/rust.yml/badge.svg)](https://github.com/zeenix/tomling/actions/workflows/rust.yml) [![API Documentation](https://docs.rs/tomling/badge.svg)](https://docs.rs/tomling/) [![crates.io](https://img.shields.io/crates/v/tomling)](https://crates.io/crates/tomling)
 
-`tomling` is a `no_std` simple TOML parser API, that is designed to have minimal dependencies and is
-`no_std` compatible. The main target is Cargo manifests (`Cargo.toml` files) and hence why specific
+`tomling` is a simple TOML parser API, that is designed to have minimal dependencies and is `no_std`
+compatible. The main target is Cargo manifests (`Cargo.toml` files) and hence why specific
 API is provided for that purpose as well.
 
 ## Usage
@@ -138,6 +138,8 @@ path = "src/bin/my-binary.rs"
 - `serde` - Enables Serde support.
 - `cargo-toml` - Enables Cargo manifest specific API. This requires `serde`.
 - `simd` - Enables the `simd` feature of `winnow` for SIMD acceleration for parsing.
+- `std` - Enables some features, like `std::error::Error` implementation for `Error` type. It also
+  enables `std` feature of `winnow` and `serde`.
 
 All features are enabled by default.
 
