@@ -131,10 +131,29 @@ impl<'de, 'a> Deserializer<'de> for &'a Value<'de> {
         visitor.visit_newtype_struct(self)
     }
 
+    fn deserialize_enum<V>(
+        self,
+        _name: &'static str,
+        _variants: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self {
+            Value::String(s) => visitor.visit_enum(s.into_deserializer()),
+            // TODO: Support non-unit enums.
+            _ => Err(de::Error::invalid_type(
+                de::Unexpected::Other("non-string"),
+                &visitor,
+            )),
+        }
+    }
+
     serde::forward_to_deserialize_any! {
         i8 i16 i32 i128 u8 u16 u32 u64 u128 f32
         char string bytes byte_buf unit unit_struct
-        tuple tuple_struct struct identifier enum ignored_any
+        tuple tuple_struct struct identifier ignored_any
     }
 }
 
