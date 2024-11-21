@@ -8,7 +8,7 @@ use serde::de::{
     MapAccess, SeqAccess, Visitor,
 };
 
-/// Deserialize a TOML document from a string.
+/// Deserialize a TOML document from a string. Requires the `serde` feature.
 pub fn from_str<'de, T>(s: &'de str) -> Result<T, de::value::Error>
 where
     T: de::Deserialize<'de>,
