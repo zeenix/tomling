@@ -1,3 +1,5 @@
+//! A TOML array.
+
 use alloc::vec::Vec;
 use core::ops::{Deref, DerefMut};
 
@@ -67,6 +69,7 @@ impl<'a> FromIterator<Value<'a>> for Array<'a> {
     }
 }
 
+/// An iterator over the values of an array.
 #[derive(Debug)]
 pub struct Iter<'i, 'a> {
     iter: alloc::slice::Iter<'i, Value<'a>>,

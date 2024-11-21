@@ -1,3 +1,5 @@
+//! A simple TOML parser crate.
+
 #![no_std]
 
 extern crate alloc;

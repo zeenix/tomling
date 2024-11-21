@@ -1,3 +1,5 @@
+//! A TOML table.
+
 use crate::Value;
 use alloc::collections::BTreeMap;
 
@@ -57,6 +59,7 @@ impl<'a> FromIterator<(&'a str, Value<'a>)> for Table<'a> {
     }
 }
 
+/// An iterator over the key-value pairs of a table.
 #[derive(Debug)]
 pub struct Iter<'i, 'a> {
     iter: alloc::collections::btree_map::Iter<'i, &'a str, Value<'a>>,
