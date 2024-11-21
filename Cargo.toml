@@ -6,9 +6,10 @@ edition = "2021"
 rust-version = "1.68"
 
 [features]
-default = ["serde", "cargo-toml", "simd"]
+default = ["serde", "cargo-toml", "simd", "std"]
 cargo-toml = ["serde"]
 simd = ["winnow/simd"]
+std = ["winnow/std", "serde?/std"]
 
 [dependencies]
 winnow = { version = "0.6.20", default-features = false, features = ["alloc"] }

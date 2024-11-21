@@ -13,8 +13,17 @@ pub enum Error {
     Deserialize(DeserializeError),
 }
 
-// TODO: Uncomment this when we can bump the MSRV to 1.81:
-// impl core::error::Error for Error {}
+// TODO: Implement core::error::Error instead when we can bump the MSRV to 1.81.
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Error::Parse(p) => Some(p),
+            #[cfg(feature = "serde")]
+            Error::Deserialize(d) => Some(d),
+        }
+    }
+}
 
 impl alloc::fmt::Display for Error {
     fn fmt(&self, f: &mut alloc::fmt::Formatter<'_>) -> alloc::fmt::Result {
@@ -45,6 +54,15 @@ impl alloc::fmt::Display for ParseError {
     }
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for ParseError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        // For some reason `winnow::error::ContextError` doesn't implement `std::error::Error`.
+        None
+    }
+}
+
+#[cfg(feature = "serde")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeserializeError {
     pub(crate) de: serde::de::value::Error,
@@ -66,8 +84,16 @@ impl From<serde::de::value::Error> for Error {
     }
 }
 
+#[cfg(feature = "serde")]
 impl alloc::fmt::Display for DeserializeError {
     fn fmt(&self, f: &mut alloc::fmt::Formatter<'_>) -> alloc::fmt::Result {
         write!(f, "{}", self.de)
+    }
+}
+
+#[cfg(all(feature = "std", feature = "serde"))]
+impl std::error::Error for DeserializeError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.de)
     }
 }
