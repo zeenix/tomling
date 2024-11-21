@@ -32,6 +32,7 @@ pub enum DevDependency<'d> {
 pub struct FullDevDependency<'f> {
     version: &'f str,
     features: Option<Vec<&'f str>>,
+    workspace: Option<bool>,
 }
 
 impl FullDevDependency<'_> {
@@ -43,6 +44,11 @@ impl FullDevDependency<'_> {
     /// The features of the dev dependency.
     pub fn features(&self) -> Option<&[&str]> {
         self.features.as_deref()
+    }
+
+    /// Inherit from the workspace.
+    pub fn workspace(&self) -> Option<bool> {
+        self.workspace
     }
 }
 
