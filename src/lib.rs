@@ -1,5 +1,3 @@
-//! A simple TOML parser crate.
-
 #![no_std]
 #![forbid(unsafe_code)]
 #![deny(
@@ -9,6 +7,7 @@
     missing_docs
 )]
 #![warn(unreachable_pub)]
+#![doc = include_str!("../README.md")]
 
 extern crate alloc;
 
