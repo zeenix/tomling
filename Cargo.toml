@@ -5,14 +5,12 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["serde", "cargo-toml"]
+default = ["serde", "cargo-toml", "simd"]
 cargo-toml = ["serde"]
+simd = ["winnow/simd"]
 
 [dependencies]
-winnow = { version = "0.6.20", default-features = false, features = [
-    "alloc",
-    "simd",
-] }
+winnow = { version = "0.6.20", default-features = false, features = ["alloc"] }
 serde = { version = "1.0.215", default-features = false, optional = true, features = [
     "derive",
     "alloc",
