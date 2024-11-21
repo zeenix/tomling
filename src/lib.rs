@@ -1,4 +1,4 @@
-#![no_std]
+#![cfg_attr(all(not(feature = "std"), not(test)), no_std)]
 #![forbid(unsafe_code)]
 #![deny(
     missing_debug_implementations,
