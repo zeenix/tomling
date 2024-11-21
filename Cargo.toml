@@ -4,6 +4,11 @@ description = "A simple TOML parser"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.68"
+license = "MIT"
+repository = "https://github.com/zeenix/tomling"
+keywords = ["toml", "parser", "deserializer", "serde", "no-std"]
+categories = ["parsing", "parser-implementations", "no-std"]
+authors = ["Zeeshan Ali Khan <zeenix@gmail.com>"]
 
 [features]
 default = ["serde", "cargo-toml", "simd", "std"]
