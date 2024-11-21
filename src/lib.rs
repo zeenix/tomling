@@ -24,3 +24,5 @@ pub use parse::parse;
 mod serde;
 #[cfg(feature = "serde")]
 pub use serde::from_str;
+#[cfg(feature = "cargo-toml")]
+pub mod cargo;

@@ -5,7 +5,8 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["serde"]
+default = ["serde", "cargo-toml"]
+cargo-toml = ["serde"]
 
 [dependencies]
 winnow = { version = "0.6.20", default-features = false, features = [
