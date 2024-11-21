@@ -102,8 +102,8 @@ fn parse_dotted_key<'i>(input: &mut &'i str) -> PResult<Vec<Cow<'i, str>>, Conte
 
 /// Parses a key (alphanumeric or underscores)
 fn parse_key<'i>(input: &mut &'i str) -> PResult<Cow<'i, str>, ContextError> {
-    // We don't use `strings::parse` here because in the future that will also accept multiline
-    // strings and we don't want that here.
+    // We don't use `parse_string` here beecause that also accept multiline strings and we don't
+    // want that here.
     let string_key = alt((strings::parse_basic, strings::parse_literal)).map(|s| match s {
         Value::String(s) => s,
         _ => unreachable!(),
