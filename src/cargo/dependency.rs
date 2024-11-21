@@ -33,6 +33,7 @@ pub struct FullDependency<'f> {
     version: &'f str,
     optional: Option<bool>,
     features: Option<Vec<&'f str>>,
+    workspace: Option<bool>,
 }
 
 impl FullDependency<'_> {
@@ -49,5 +50,10 @@ impl FullDependency<'_> {
     /// The features of the dependency.
     pub fn features(&self) -> Option<&[&str]> {
         self.features.as_deref()
+    }
+
+    /// Inherit from the workspace.
+    pub fn workspace(&self) -> Option<bool> {
+        self.workspace
     }
 }
