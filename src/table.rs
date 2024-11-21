@@ -5,7 +5,8 @@ use alloc::collections::BTreeMap;
 
 /// A TOML table.
 #[derive(Debug, PartialEq, Default)]
-pub struct Table<'a>(BTreeMap<&'a str, Value<'a>>);
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+pub struct Table<'a>(#[cfg_attr(feature = "serde", serde(borrow))] BTreeMap<&'a str, Value<'a>>);
 
 impl<'a> Table<'a> {
     /// Create a new table.

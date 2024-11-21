@@ -7,7 +7,8 @@ use crate::Value;
 
 /// A TOML array.
 #[derive(Debug, PartialEq, Default)]
-pub struct Array<'a>(Vec<Value<'a>>);
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+pub struct Array<'a>(#[cfg_attr(feature = "serde", serde(borrow))] Vec<Value<'a>>);
 
 impl<'a> Array<'a> {
     /// Create a new array.
