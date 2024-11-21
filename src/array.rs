@@ -6,7 +6,7 @@ use core::ops::{Deref, DerefMut};
 use crate::Value;
 
 /// A TOML array.
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, Default, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Array<'a>(#[cfg_attr(feature = "serde", serde(borrow))] Vec<Value<'a>>);
 

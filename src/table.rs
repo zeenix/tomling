@@ -4,7 +4,7 @@ use crate::Value;
 use alloc::collections::BTreeMap;
 
 /// A TOML table.
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, Default, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Table<'a>(#[cfg_attr(feature = "serde", serde(borrow))] BTreeMap<&'a str, Value<'a>>);
 
