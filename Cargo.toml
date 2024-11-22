@@ -22,3 +22,6 @@ serde = { version = "1.0.215", default-features = false, optional = true, featur
     "derive",
     "alloc",
 ] }
+
+[dev-dependencies]
+toml-test-harness = "0.4.10"
