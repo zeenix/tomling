@@ -1,11 +1,12 @@
+mod numbers;
+
 use crate::{Array, Error, ParseError, Table, Value};
 
-use alloc::{format, vec, vec::Vec};
+use alloc::{vec, vec::Vec};
 use winnow::{
     ascii::{multispace1, space0},
     combinator::{alt, delimited, opt, repeat, separated, separated_pair, terminated},
     error::ContextError,
-    stream::AsChar,
     token::{take_until, take_while},
     PResult, Parser,
 };
@@ -123,6 +124,7 @@ fn parse_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
         alt((
             parse_string,
             parse_float,
+            parse_integer,
             parse_boolean,
             parse_array,
             parse_inline_table,
@@ -187,34 +189,17 @@ fn parse_multiline_literal_string<'i>(input: &mut &'i str) -> PResult<Value<'i>,
 
 /// Parses an integer value
 fn parse_integer<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
-    take_while(1.., |c: char| c.is_ascii_digit())
-        .map(|s: &str| Value::Integer(s.parse().unwrap()))
-        .parse_next(input)
+    numbers::integer(input).map(Value::Integer)
 }
 
 /// Parses a float value
 fn parse_float<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
-    alt((
-        separated_pair(
-            take_while(1.., AsChar::is_dec_digit),
-            '.',
-            take_while(1.., AsChar::is_dec_digit),
-        )
-        .map(|(int_part, frac_part): (&str, &str)| {
-            Value::Float(format!("{}.{}", int_part, frac_part).parse().unwrap())
-        }),
-        parse_integer,
-    ))
-    .parse_next(input)
+    numbers::float(input).map(Value::Float)
 }
 
 /// Parses a boolean value
 fn parse_boolean<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
-    alt((
-        "true".map(|_| Value::Boolean(true)),
-        "false".map(|_| Value::Boolean(false)),
-    ))
-    .parse_next(input)
+    numbers::boolean(input).map(Value::Boolean)
 }
 
 /// Parses an array of values
