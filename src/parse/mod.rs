@@ -83,7 +83,7 @@ fn parse_table_header<'i>(input: &mut &'i str) -> PResult<(Vec<&'i str>, bool), 
 }
 
 /// Parses comments.
-fn parse_comments(input: &mut &'_ str) -> PResult<(), ContextError> {
+fn parse_comments(input: &mut &str) -> PResult<(), ContextError> {
     delimited(
         '#',
         take_while(
