@@ -5,7 +5,7 @@ use crate::{Array, Error, ParseError, Table, Value};
 use alloc::{vec, vec::Vec};
 use winnow::{
     ascii::{multispace1, space0},
-    combinator::{alt, delimited, opt, repeat, separated, separated_pair, terminated},
+    combinator::{alt, delimited, eof, opt, repeat, separated, separated_pair, terminated},
     error::ContextError,
     token::{take_until, take_while},
     PResult, Parser,
@@ -92,7 +92,7 @@ fn parse_comments(input: &mut &'_ str) -> PResult<(), ContextError> {
             // > not permitted in comments.
             |c| !matches!(c, '\0'..='\u{08}' | '\u{0a}'..='\u{1f}' | '\u{7f}'),
         ),
-        alt(("\r\n", "\n")),
+        alt(("\r\n", "\n", eof)),
     )
     .void()
     .parse_next(input)

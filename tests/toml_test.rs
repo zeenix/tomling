@@ -99,7 +99,6 @@ fn toml_test_harness() {
             "/valid/array/string-with-comma*",
             "/valid/array/table-array-string-backslash.toml",
             "/valid/comment/everywhere.toml",
-            "/valid/comment/noeol.toml",
             "/valid/comment/tricky.toml",
             "/valid/datetime",
             "/valid/empty-file.toml",
