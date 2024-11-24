@@ -11,7 +11,6 @@ use winnow::{
 // ;; Boolean
 
 // boolean = true / false
-#[allow(dead_code)] // directly define in `fn value`
 pub(crate) fn boolean(input: &mut &str) -> PResult<bool> {
     trace("boolean", alt((true_, false_))).parse_next(input)
 }
