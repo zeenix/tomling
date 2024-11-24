@@ -57,6 +57,9 @@ function ensure_rustup_installed() {
 }
 
 function ensure_rustfmt_installed() {
+    if [ -f ~/.cache/zeenix/rustfmt-installed ]; then
+        return
+    fi
     hook_info "📦️ Ensuring that nightly rustfmt is installed"
     if ! rustup component list --toolchain nightly|grep 'rustfmt-preview.*(installed)' &> /dev/null; then
         rustup component add rustfmt-preview --toolchain nightly
@@ -64,9 +67,14 @@ function ensure_rustfmt_installed() {
     else
         hook_success "rustfmt is already installed."
     fi
+    mkdir ~/.cache/zeenix
+    touch ~/.cache/zeenix/rustfmt-installed
 }
 
 function ensure_clippy_installed() {
+    if [ -f ~/.cache/zeenix/clippy-installed ]; then
+        return
+    fi
     hook_info "📦️ Ensuring that clippy is installed"
     if ! rustup component list --toolchain stable|grep 'clippy.*(installed)' &> /dev/null; then
         rustup component add clippy
@@ -74,6 +82,8 @@ function ensure_clippy_installed() {
     else
         hook_success "clippy is already installed."
     fi
+    mkdir ~/.cache/zeenix
+    touch ~/.cache/zeenix/clippy-installed
 }
 
 function check_formatting() {
