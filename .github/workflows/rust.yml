@@ -38,3 +38,19 @@ jobs:
         run: cargo fmt -- --check
       - name: Catch common mistakes and unwrap calls
         run: cargo clippy -- -D warnings
+
+  fuzz:
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: full
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+      - uses: Swatinem/rust-cache@v2
+      - name: Fuzz
+        run: |
+          cargo --locked install cargo-fuzz
+          cargo --locked fuzz run parse_no_panic -- -max_total_time=30 -max_len=100M
