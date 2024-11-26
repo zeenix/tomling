@@ -6,7 +6,7 @@
     rust_2018_idioms,
     missing_docs
 )]
-#![warn(unreachable_pub)]
+#![warn(unreachable_pub, clippy::std_instead_of_core)]
 #![doc = include_str!("../README.md")]
 
 extern crate alloc;
