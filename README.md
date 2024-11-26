@@ -145,9 +145,12 @@ All features are enabled by default.
 
 ## Comparison with `toml` crate
 
-The [`toml`] crate is great but it being based on `toml-edit`, it ends up requiring `indexmap` crate
+The [`toml`] crate is great but it being based on `toml_edit`, it ends up requiring `indexmap` crate
 and its dependencies. `tomling` was created specifically to avoid most of these dependencies by
 focusing completely on the parsing of `TOML` documents only.
+
+Having said that, some of the code (especially the low-level parsing code) is inspired (or in some
+cases, copied) from the `toml_edit` crate.
 
 ## Goals
 
@@ -157,7 +160,6 @@ focusing completely on the parsing of `TOML` documents only.
 
 ## Non-goals
 
-- Strict compliance with the specification. This can change if sufficient demand arises. 😉
 - Encoder/Serializer API.
 
 ## License
