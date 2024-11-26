@@ -157,7 +157,6 @@ focusing completely on the parsing of `TOML` documents only.
 
 ## Non-goals
 
-- Strict compliance with the specification. This can change if sufficient demand arises. 😉
 - Encoder/Serializer API.
 
 ## License
