@@ -1,11 +1,13 @@
+mod ignored;
 mod numbers;
 
 use crate::{Array, Error, ParseError, Table, Value};
 
 use alloc::{vec, vec::Vec};
+use ignored::{parse_comment_newline, parse_whitespace_n_comments};
 use winnow::{
     ascii::{multispace1, space0},
-    combinator::{alt, delimited, eof, opt, repeat, separated, separated_pair, terminated},
+    combinator::{alt, cut_err, delimited, opt, peek, preceded, repeat, separated, separated_pair},
     error::ContextError,
     token::{take_until, take_while},
     PResult, Parser,
@@ -22,8 +24,9 @@ pub fn parse(input: &str) -> Result<Table<'_>, Error> {
         )
     });
     let whitespace = multispace1.map(|_| (None, Vec::new(), Value::Table(Table::new())));
-    let comment = parse_comments.map(|_| (None, Vec::new(), Value::Table(Table::new())));
-    let line_parser = alt((table_header, key_value, whitespace, comment));
+    let comment_line =
+        parse_comment_newline.map(|_| (None, Vec::new(), Value::Table(Table::new())));
+    let line_parser = alt((table_header, key_value, whitespace, comment_line));
 
     repeat(1.., line_parser)
         .fold(
@@ -79,22 +82,6 @@ fn parse_table_header<'i>(input: &mut &'i str) -> PResult<(Vec<&'i str>, bool), 
         delimited("[[", parse_dotted_key, "]]").map(|keys| (keys, true)), // Array of tables
         delimited('[', parse_dotted_key, ']').map(|keys| (keys, false)),  // Regular table
     ))
-    .parse_next(input)
-}
-
-/// Parses comments.
-fn parse_comments(input: &mut &str) -> PResult<(), ContextError> {
-    delimited(
-        '#',
-        take_while(
-            0..,
-            // > Control characters other than tab (U+0000 to U+0008, U+000A to U+001F, U+007F) are
-            // > not permitted in comments.
-            |c| !matches!(c, '\0'..='\u{08}' | '\u{0a}'..='\u{1f}' | '\u{7f}'),
-        ),
-        alt(("\r\n", "\n", eof)),
-    )
-    .void()
     .parse_next(input)
 }
 
@@ -215,30 +202,31 @@ fn parse_boolean<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
 
 /// Parses an array of values
 fn parse_array<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
-    delimited(
-        '[',
-        (repeat(0.., parse_multiline_array_values), opt(parse_value)),
-        ']',
-    )
-    .map(|(values, value): (Vec<_>, _)| {
-        let mut values: Array<'i> = values.into_iter().flatten().collect();
-        if let Some(value) = value {
-            values.push(value);
-        }
-        Value::Array(values)
-    })
-    .parse_next(input)
+    delimited('[', cut_err(parse_multiline_array_values), cut_err(']'))
+        .map(Value::Array)
+        .parse_next(input)
 }
 
-fn parse_multiline_array_values<'i>(
-    input: &mut &'i str,
-) -> PResult<Option<Value<'i>>, ContextError> {
-    alt((
-        multispace1.map(|_| None),
-        parse_comments.map(|_| None),
-        terminated(parse_value, ',').map(Some),
-    ))
-    .parse_next(input)
+fn parse_multiline_array_values<'i>(input: &mut &'i str) -> PResult<Array<'i>, ContextError> {
+    if peek(opt(']')).parse_next(input)?.is_some() {
+        // Optimize for empty arrays, avoiding `value` from being expected to fail
+        return Ok(Array::new());
+    }
+
+    let array: Array<'i> = separated(0.., parse_multiline_array_value, ',').parse_next(input)?;
+
+    if !array.is_empty() {
+        // Ignore trailing comma, if present.
+        opt(',').void().parse_next(input)?;
+    }
+
+    parse_whitespace_n_comments.void().parse_next(input)?;
+
+    Ok(array)
+}
+
+fn parse_multiline_array_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+    preceded(parse_whitespace_n_comments, parse_value).parse_next(input)
 }
 
 /// Parses an inline table
