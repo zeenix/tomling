@@ -2,6 +2,7 @@
 
 use alloc::vec::Vec;
 use core::ops::{Deref, DerefMut};
+use winnow::stream::Accumulate;
 
 use crate::Value;
 
@@ -89,5 +90,15 @@ impl<'i, 'a> Iterator for Iter<'i, 'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next()
+    }
+}
+
+impl<'a> Accumulate<Value<'a>> for Array<'a> {
+    fn initial(capacity: Option<usize>) -> Self {
+        Self(capacity.map(Vec::with_capacity).unwrap_or_default())
+    }
+
+    fn accumulate(&mut self, acc: Value<'a>) {
+        self.0.push(acc);
     }
 }
