@@ -149,6 +149,9 @@ The [`toml`] crate is great but it being based on `toml_edit`, it ends up requir
 and its dependencies. `tomling` was created specifically to avoid most of these dependencies by
 focusing completely on the parsing of `TOML` documents only.
 
+Having said that, some of the code (especially the low-level parsing code) is inspired (or in some
+cases, copied) from the `toml_edit` crate.
+
 ## Goals
 
 - Simple parser/deserializer API.
