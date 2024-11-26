@@ -268,3 +268,21 @@ fn insert_nested_key<'a>(map: &mut Table<'a>, keys: &[&'a str], value: Value<'a>
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn issue_8() {
+        use std::{
+            thread::{sleep, spawn},
+            time::Duration,
+        };
+
+        // Reproducer for #8: parsing of a deeply nested array took an **extremely** long time.
+        let handle = spawn(|| super::parse("a=[[[[[[[[[[[[[[[[[[[[[[[[[[[").unwrap_err());
+        sleep(Duration::from_millis(10));
+        if !handle.is_finished() {
+            panic!("parsing took way too long.");
+        }
+    }
+}
