@@ -75,10 +75,10 @@ let package = match manifest.get("package").unwrap() {
     Value::Table(package) => package,
     _ => panic!(),
 };
-assert_eq!(package.get("name").unwrap(), &Value::String("example"));
-assert_eq!(package.get("version").unwrap(), &Value::String("0.1.0"));
-assert_eq!(package.get("edition").unwrap(), &Value::String("2021"));
-assert_eq!(package.get("resolver").unwrap(), &Value::String("2"));
+assert_eq!(package.get("name").unwrap(), &Value::String("example".into()));
+assert_eq!(package.get("version").unwrap(), &Value::String("0.1.0".into()));
+assert_eq!(package.get("edition").unwrap(), &Value::String("2021".into()));
+assert_eq!(package.get("resolver").unwrap(), &Value::String("2".into()));
 
 let deps = match manifest.get("dependencies").unwrap() {
     Value::Table(deps) => deps,
@@ -88,17 +88,17 @@ let serde = match deps.get("serde").unwrap() {
     Value::Table(serde) => serde,
     _ => panic!(),
 };
-assert_eq!(serde.get("version").unwrap(), &Value::String("1.0"));
+assert_eq!(serde.get("version").unwrap(), &Value::String("1.0".into()));
 let serde_features = match serde.get("features").unwrap() {
     Value::Array(features) => features.as_slice(),
     _ => panic!(),
 };
-assert_eq!(serde_features, &[Value::String("std"), Value::String("derive")]);
+assert_eq!(serde_features, &[Value::String("std".into()), Value::String("derive".into())]);
 let regex = match deps.get("regex").unwrap() {
-    Value::String(regex) => *regex,
+    Value::String(regex) => regex,
     _ => panic!(),
 };
-assert_eq!(regex, "1.5");
+assert_eq!(&*regex, "1.5");
 
 const CARGO_TOML: &'static str = r#"
 [package]

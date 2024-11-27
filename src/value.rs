@@ -1,4 +1,5 @@
 use crate::{Array, Table};
+use alloc::borrow::Cow;
 
 /// A TOML value.
 #[derive(Debug, Clone, PartialEq)]
@@ -7,7 +8,8 @@ use crate::{Array, Table};
 #[cfg_attr(feature = "serde", serde(untagged))]
 pub enum Value<'a> {
     /// A string.
-    String(&'a str),
+    #[cfg_attr(feature = "serde", serde(borrow))]
+    String(Cow<'a, str>),
     /// An integer.
     Integer(i64),
     /// A floating-point number.

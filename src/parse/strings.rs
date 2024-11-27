@@ -23,14 +23,14 @@ pub(crate) fn parse<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError>
 /// Parses a basic string value enclosed in quotes.
 pub(crate) fn parse_basic<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     delimited('"', take_until(0.., '"'), '"')
-        .map(Value::String)
+        .map(|s: &str| Value::String(s.into()))
         .parse_next(input)
 }
 
 /// Parses a literal string value enclosed in single quotes.
 pub(crate) fn parse_literal<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     delimited('\'', take_until(0.., '\''), '\'')
-        .map(Value::String)
+        .map(|s: &str| Value::String(s.into()))
         .parse_next(input)
 }
 
@@ -44,7 +44,7 @@ pub(crate) fn parse_multiline_basic<'i>(input: &mut &'i str) -> PResult<Value<'i
         }),
         "\"\"\"",
     )
-    .map(Value::String)
+    .map(|s| Value::String(s.into()))
     .parse_next(input)
 }
 
@@ -55,6 +55,6 @@ pub(crate) fn parse_multiline_literal<'i>(input: &mut &'i str) -> PResult<Value<
         take_until(0.., "'''").map(|s: &str| s.trim_start_matches('\n')), // Trim leading newlines
         "'''",
     )
-    .map(Value::String)
+    .map(|s| Value::String(s.into()))
     .parse_next(input)
 }

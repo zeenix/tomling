@@ -4,7 +4,7 @@ mod strings;
 
 use crate::{Array, Error, ParseError, Table, Value};
 
-use alloc::{vec, vec::Vec};
+use alloc::{borrow::Cow, vec, vec::Vec};
 use ignored::{parse_comment_newline, parse_whitespace_n_comments};
 use winnow::{
     ascii::{multispace1, space0},
@@ -36,8 +36,10 @@ pub fn parse(input: &str) -> Result<Table<'_>, Error> {
                 if let Some((header, is_array)) = header {
                     if is_array {
                         // Handle array of tables ([[table]])
-                        let key = *header.last().expect("Header should not be empty");
-                        let entry = map.entry(key).or_insert_with(|| Value::Array(Array::new()));
+                        let key = header.last().expect("Header should not be empty").clone();
+                        let entry = map
+                            .entry(key.clone())
+                            .or_insert_with(|| Value::Array(Array::new()));
                         if let Value::Array(array) = entry {
                             // Append a new empty table to the array
                             let new_table = Table::new();
@@ -52,7 +54,7 @@ pub fn parse(input: &str) -> Result<Table<'_>, Error> {
                     }
                 } else if !keys.is_empty() {
                     if let Some(ref table) = current_table {
-                        if let Some(Value::Array(array)) = map.get_mut(table[0]) {
+                        if let Some(Value::Array(array)) = map.get_mut(&table[0]) {
                             // Insert into the most recent table in the array
                             if let Some(Value::Table(last_table)) = array.last_mut() {
                                 insert_nested_key(last_table, &keys, value);
@@ -78,7 +80,7 @@ pub fn parse(input: &str) -> Result<Table<'_>, Error> {
 }
 
 /// Parses a table header (e.g., `[dependencies]`)
-fn parse_table_header<'i>(input: &mut &'i str) -> PResult<(Vec<&'i str>, bool), ContextError> {
+fn parse_table_header<'i>(input: &mut &'i str) -> PResult<(Vec<Cow<'i, str>>, bool), ContextError> {
     alt((
         delimited("[[", parse_dotted_key, "]]").map(|keys| (keys, true)), // Array of tables
         delimited('[', parse_dotted_key, ']').map(|keys| (keys, false)),  // Regular table
@@ -87,17 +89,19 @@ fn parse_table_header<'i>(input: &mut &'i str) -> PResult<(Vec<&'i str>, bool), 
 }
 
 /// Parses a single key-value pair
-fn parse_key_value<'i>(input: &mut &'i str) -> PResult<(Vec<&'i str>, Value<'i>), ContextError> {
+fn parse_key_value<'i>(
+    input: &mut &'i str,
+) -> PResult<(Vec<Cow<'i, str>>, Value<'i>), ContextError> {
     separated_pair(parse_dotted_key, '=', parse_value).parse_next(input)
 }
 
 /// Parses a dotted or single key
-fn parse_dotted_key<'i>(input: &mut &'i str) -> PResult<Vec<&'i str>, ContextError> {
+fn parse_dotted_key<'i>(input: &mut &'i str) -> PResult<Vec<Cow<'i, str>>, ContextError> {
     separated(1.., parse_key, '.').parse_next(input)
 }
 
 /// Parses a key (alphanumeric or underscores)
-fn parse_key<'i>(input: &mut &'i str) -> PResult<&'i str, ContextError> {
+fn parse_key<'i>(input: &mut &'i str) -> PResult<Cow<'i, str>, ContextError> {
     // We don't use `strings::parse` here because in the future that will also accept multiline
     // strings and we don't want that here.
     let string_key = alt((strings::parse_basic, strings::parse_literal)).map(|s| match s {
@@ -108,7 +112,7 @@ fn parse_key<'i>(input: &mut &'i str) -> PResult<&'i str, ContextError> {
         space0,
         alt((
             string_key,
-            take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '-'),
+            take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '-').map(Into::into),
         )),
         space0,
     )
@@ -184,18 +188,18 @@ fn parse_inline_table<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextErro
         separated(0.., separated_pair(parse_key, '=', parse_value), ','),
         '}',
     )
-    .map(|pairs: Vec<(&'i str, Value<'i>)>| Value::Table(pairs.into_iter().collect()))
+    .map(|pairs: Vec<(Cow<'i, str>, Value<'i>)>| Value::Table(pairs.into_iter().collect()))
     .parse_next(input)
 }
 
 /// Inserts a value into a nested map using a dotted key
-fn insert_nested_key<'a>(map: &mut Table<'a>, keys: &[&'a str], value: Value<'a>) {
+fn insert_nested_key<'a>(map: &mut Table<'a>, keys: &[Cow<'a, str>], value: Value<'a>) {
     if let Some((first, rest)) = keys.split_first() {
         if rest.is_empty() {
-            map.insert(first, value);
+            map.insert(first.clone(), value);
         } else {
             let entry = map
-                .entry(first)
+                .entry(first.clone())
                 .or_insert_with(|| Value::Table(Table::new()));
 
             if let Value::Table(ref mut nested_map) = entry {

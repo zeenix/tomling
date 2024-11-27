@@ -26,13 +26,13 @@ impl Decoder for Tomling {
 fn map_table(table: &Table<'_>) -> HashMap<String, Decoded> {
     table
         .iter()
-        .map(|(key, val)| (key.to_owned(), value_to_decoded(val)))
+        .map(|(key, val)| (key.to_string(), value_to_decoded(val)))
         .collect()
 }
 
 fn value_to_decoded(value: &Value<'_>) -> Decoded {
     match value {
-        &Value::String(s) => Decoded::Value(s.into()),
+        Value::String(s) => Decoded::Value(s.to_string().into()),
         &Value::Integer(i) => Decoded::Value(i.into()),
         &Value::Float(f) => Decoded::Value(f.into()),
         &Value::Boolean(b) => Decoded::Value(b.into()),

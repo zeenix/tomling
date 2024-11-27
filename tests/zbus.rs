@@ -9,9 +9,15 @@ fn zbus() {
         Value::Table(package) => package,
         _ => panic!(),
     };
-    assert_eq!(package.get("name").unwrap(), &Value::String("zbus"));
-    assert_eq!(package.get("version").unwrap(), &Value::String("5.1.1"));
-    assert_eq!(package.get("edition").unwrap(), &Value::String("2021"));
+    assert_eq!(package.get("name").unwrap(), &Value::String("zbus".into()));
+    assert_eq!(
+        package.get("version").unwrap(),
+        &Value::String("5.1.1".into())
+    );
+    assert_eq!(
+        package.get("edition").unwrap(),
+        &Value::String("2021".into())
+    );
 
     // Let's check the dependencies, especially the complicated ones.
     let dependencies = match parsed_map.get("dependencies").unwrap() {
@@ -24,30 +30,36 @@ fn zbus() {
         Value::Table(serde) => serde,
         _ => panic!(),
     };
-    assert_eq!(serde.get("version").unwrap(), &Value::String("1.0.200"));
+    assert_eq!(
+        serde.get("version").unwrap(),
+        &Value::String("1.0.200".into())
+    );
     assert_eq!(
         serde.get("features").unwrap(),
-        &Value::Array([Value::String("derive")].into_iter().collect())
+        &Value::Array([Value::String("derive".into())].into_iter().collect())
     );
     // Tokio
     let tokio = match dependencies.get("tokio").unwrap() {
         Value::Table(tokio) => tokio,
         _ => panic!(),
     };
-    assert_eq!(tokio.get("version").unwrap(), &Value::String("1.37.0"));
+    assert_eq!(
+        tokio.get("version").unwrap(),
+        &Value::String("1.37.0".into())
+    );
     assert_eq!(tokio.get("optional").unwrap(), &Value::Boolean(true));
     assert_eq!(
         tokio.get("features").unwrap(),
         &Value::Array(
             [
-                Value::String("rt"),
-                Value::String("net"),
-                Value::String("time"),
-                Value::String("fs"),
-                Value::String("io-util"),
-                Value::String("process"),
-                Value::String("sync"),
-                Value::String("tracing"),
+                Value::String("rt".into()),
+                Value::String("net".into()),
+                Value::String("time".into()),
+                Value::String("fs".into()),
+                Value::String("io-util".into()),
+                Value::String("process".into()),
+                Value::String("sync".into()),
+                Value::String("tracing".into()),
             ]
             .into_iter()
             .collect()
@@ -75,15 +87,15 @@ fn zbus() {
             _ => None,
         })
         .unwrap();
-    assert_eq!(nix.get("version").unwrap(), &Value::String("0.29"));
+    assert_eq!(nix.get("version").unwrap(), &Value::String("0.29".into()));
     assert_eq!(nix.get("default-features").unwrap(), &Value::Boolean(false));
     assert_eq!(
         nix.get("features").unwrap(),
         &Value::Array(
             [
-                Value::String("socket"),
-                Value::String("uio"),
-                Value::String("user"),
+                Value::String("socket".into()),
+                Value::String("uio".into()),
+                Value::String("user".into()),
             ]
             .into_iter()
             .collect()
@@ -117,7 +129,10 @@ fn zbus() {
         _ => None,
     })
     .unwrap();
-    assert_eq!(bench.get("name").unwrap(), &Value::String("benchmarks"));
+    assert_eq!(
+        bench.get("name").unwrap(),
+        &Value::String("benchmarks".into())
+    );
     assert_eq!(bench.get("harness").unwrap(), &Value::Boolean(false));
 
     // Finally, the examples
@@ -135,11 +150,17 @@ fn zbus() {
             Value::Table(e) => e,
             _ => panic!(),
         };
-        assert_eq!(example.get("name").unwrap(), &Value::String(names[i]));
-        assert_eq!(example.get("path").unwrap(), &Value::String(paths[i]));
+        assert_eq!(
+            example.get("name").unwrap(),
+            &Value::String(names[i].into())
+        );
+        assert_eq!(
+            example.get("path").unwrap(),
+            &Value::String(paths[i].into())
+        );
         assert_eq!(
             example.get("required-features").unwrap(),
-            &Value::Array([Value::String("blocking-api")].into_iter().collect())
+            &Value::Array([Value::String("blocking-api".into())].into_iter().collect())
         );
     }
 }

@@ -9,9 +9,15 @@ fn tokio() {
         Value::Table(package) => package,
         _ => panic!(),
     };
-    assert_eq!(package.get("name").unwrap(), &Value::String("tokio"));
-    assert_eq!(package.get("version").unwrap(), &Value::String("1.41.1"));
-    assert_eq!(package.get("edition").unwrap(), &Value::String("2021"));
+    assert_eq!(package.get("name").unwrap(), &Value::String("tokio".into()));
+    assert_eq!(
+        package.get("version").unwrap(),
+        &Value::String("1.41.1".into())
+    );
+    assert_eq!(
+        package.get("edition").unwrap(),
+        &Value::String("2021".into())
+    );
 
     // Let's check the dependencies, especially the complicated ones.
     let dependencies = match parsed_map.get("dependencies").unwrap() {
@@ -24,7 +30,10 @@ fn tokio() {
         Value::Table(bytes) => bytes,
         _ => panic!(),
     };
-    assert_eq!(bytes.get("version").unwrap(), &Value::String("1.0.0"));
+    assert_eq!(
+        bytes.get("version").unwrap(),
+        &Value::String("1.0.0".into())
+    );
     assert_eq!(bytes.get("optional").unwrap(), &Value::Boolean(true));
 
     let dev_deps = match parsed_map.get("dev-dependencies").unwrap() {
@@ -35,10 +44,13 @@ fn tokio() {
         Value::Table(t) => t,
         _ => panic!(),
     };
-    assert_eq!(tokio_test.get("version").unwrap(), &Value::String("0.4.0"));
+    assert_eq!(
+        tokio_test.get("version").unwrap(),
+        &Value::String("0.4.0".into())
+    );
     assert_eq!(
         tokio_test.get("path").unwrap(),
-        &Value::String("../tokio-test")
+        &Value::String("../tokio-test".into())
     );
 
     // cfg-using dependencies
@@ -58,7 +70,7 @@ fn tokio() {
             _ => None,
         })
         .unwrap();
-    assert_eq!(version, &Value::String("0.3.0"));
+    assert_eq!(version, &Value::String("0.3.0".into()));
 
     // rand
     let version = target

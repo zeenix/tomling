@@ -1,12 +1,14 @@
 //! A TOML table.
 
 use crate::Value;
-use alloc::collections::BTreeMap;
+use alloc::{borrow::Cow, collections::BTreeMap};
 
 /// A TOML table.
 #[derive(Debug, Default, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct Table<'a>(#[cfg_attr(feature = "serde", serde(borrow))] BTreeMap<&'a str, Value<'a>>);
+pub struct Table<'a>(
+    #[cfg_attr(feature = "serde", serde(borrow))] BTreeMap<Cow<'a, str>, Value<'a>>,
+);
 
 impl<'a> Table<'a> {
     /// Create a new table.
@@ -15,7 +17,7 @@ impl<'a> Table<'a> {
     }
 
     /// Insert a key-value pair into the table.
-    pub fn insert(&mut self, key: &'a str, value: Value<'a>) {
+    pub fn insert(&mut self, key: Cow<'a, str>, value: Value<'a>) {
         self.0.insert(key, value);
     }
 
@@ -41,8 +43,8 @@ impl<'a> Table<'a> {
 
     pub(crate) fn entry(
         &mut self,
-        key: &'a str,
-    ) -> crate::alloc::collections::btree_map::Entry<'_, &'a str, Value<'a>> {
+        key: Cow<'a, str>,
+    ) -> crate::alloc::collections::btree_map::Entry<'_, Cow<'a, str>, Value<'a>> {
         self.0.entry(key)
     }
 
@@ -51,10 +53,10 @@ impl<'a> Table<'a> {
     }
 }
 
-impl<'a> FromIterator<(&'a str, Value<'a>)> for Table<'a> {
+impl<'a> FromIterator<(Cow<'a, str>, Value<'a>)> for Table<'a> {
     fn from_iter<I>(iter: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Value<'a>)>,
+        I: IntoIterator<Item = (Cow<'a, str>, Value<'a>)>,
     {
         Self(iter.into_iter().collect())
     }
@@ -63,7 +65,7 @@ impl<'a> FromIterator<(&'a str, Value<'a>)> for Table<'a> {
 /// An iterator over the key-value pairs of a table.
 #[derive(Debug)]
 pub struct Iter<'i, 'a> {
-    iter: alloc::collections::btree_map::Iter<'i, &'a str, Value<'a>>,
+    iter: alloc::collections::btree_map::Iter<'i, Cow<'a, str>, Value<'a>>,
 }
 
 impl<'t, 'a> Iter<'t, 'a> {
@@ -75,9 +77,9 @@ impl<'t, 'a> Iter<'t, 'a> {
 }
 
 impl<'i, 'a> Iterator for Iter<'i, 'a> {
-    type Item = (&'a str, &'i Value<'a>);
+    type Item = (&'i Cow<'a, str>, &'i Value<'a>);
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(k, v)| (*k, v))
+        self.iter.next()
     }
 }
