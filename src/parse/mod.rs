@@ -1,5 +1,6 @@
 mod ignored;
 mod numbers;
+mod strings;
 
 use crate::{Array, Error, ParseError, Table, Value};
 
@@ -9,7 +10,7 @@ use winnow::{
     ascii::{multispace1, space0},
     combinator::{alt, cut_err, delimited, opt, peek, preceded, repeat, separated, separated_pair},
     error::ContextError,
-    token::{take_until, take_while},
+    token::take_while,
     PResult, Parser,
 };
 
@@ -97,9 +98,9 @@ fn parse_dotted_key<'i>(input: &mut &'i str) -> PResult<Vec<&'i str>, ContextErr
 
 /// Parses a key (alphanumeric or underscores)
 fn parse_key<'i>(input: &mut &'i str) -> PResult<&'i str, ContextError> {
-    // We don't use `parse_string` here beecause in the future that will also accept multiline
+    // We don't use `strings::parse` here because in the future that will also accept multiline
     // strings and we don't want that here.
-    let string_key = alt((parse_basic_string, parse_literal_string)).map(|s| match s {
+    let string_key = alt((strings::parse_basic, strings::parse_literal)).map(|s| match s {
         Value::String(s) => s,
         _ => unreachable!(),
     });
@@ -120,7 +121,7 @@ fn parse_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
         space0,
         // FIXME: Use `dispatch!` to make it more efficient.
         alt((
-            parse_string,
+            strings::parse,
             parse_float,
             parse_integer,
             parse_boolean,
@@ -129,59 +130,6 @@ fn parse_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
         )),
         space0,
     )
-    .parse_next(input)
-}
-
-/// Parses a string value enclosed in quotes
-fn parse_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
-    // TODO:
-    // * Handle multiline basic and literal strings.
-    // * Handle escape sequences.
-    alt((
-        parse_multiline_basic_string,
-        parse_basic_string,
-        parse_multiline_literal_string,
-        parse_literal_string,
-    ))
-    .parse_next(input)
-}
-
-/// Parses a basic string value enclosed in quotes.
-fn parse_basic_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
-    delimited('"', take_until(0.., '"'), '"')
-        .map(Value::String)
-        .parse_next(input)
-}
-
-/// Parses a literal string value enclosed in single quotes.
-fn parse_literal_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
-    delimited('\'', take_until(0.., '\''), '\'')
-        .map(Value::String)
-        .parse_next(input)
-}
-
-/// Parses a multiline basic string value enclosed in triple quotes.
-fn parse_multiline_basic_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
-    delimited(
-        "\"\"\"",
-        take_until(0.., "\"\"\"").map(|s: &str| {
-            // Trim leading newlines.
-            s.trim_start_matches('\n')
-        }),
-        "\"\"\"",
-    )
-    .map(Value::String)
-    .parse_next(input)
-}
-
-/// Parses a literal multiline string value enclosed in triple single quotes (`'''`).
-fn parse_multiline_literal_string<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
-    delimited(
-        "'''",
-        take_until(0.., "'''").map(|s: &str| s.trim_start_matches('\n')), // Trim leading newlines
-        "'''",
-    )
-    .map(Value::String)
     .parse_next(input)
 }
 
