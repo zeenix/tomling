@@ -15,7 +15,7 @@ pub struct Binary<'b> {
     required_features: Option<Vec<&'b str>>,
 }
 
-impl<'b> Binary<'b> {
+impl Binary<'_> {
     /// The name of the binary.
     pub fn name(&self) -> &str {
         self.name

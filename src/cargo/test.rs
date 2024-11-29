@@ -15,7 +15,7 @@ pub struct Test<'b> {
     required_features: Option<Vec<&'b str>>,
 }
 
-impl<'b> Test<'b> {
+impl Test<'_> {
     /// The name of the test.
     pub fn name(&self) -> &str {
         self.name

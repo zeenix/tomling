@@ -15,7 +15,7 @@ pub struct Bench<'b> {
     required_features: Option<Vec<&'b str>>,
 }
 
-impl<'b> Bench<'b> {
+impl Bench<'_> {
     /// The name of the bench.
     pub fn name(&self) -> &str {
         self.name

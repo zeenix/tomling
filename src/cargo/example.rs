@@ -19,7 +19,7 @@ pub struct Example<'b> {
     required_features: Option<Vec<&'b str>>,
 }
 
-impl<'b> Example<'b> {
+impl Example<'_> {
     /// The name of the example.
     pub fn name(&self) -> &str {
         self.name
