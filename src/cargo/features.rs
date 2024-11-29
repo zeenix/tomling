@@ -5,7 +5,7 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize)]
 pub struct Features<'f>(#[serde(borrow)] BTreeMap<&'f str, Vec<&'f str>>);
 
-impl<'f> Features<'f> {
+impl Features<'_> {
     /// Get the features by name.
     pub fn by_name(&self, name: &str) -> Option<&[&str]> {
         self.0.get(name).map(|v| v.as_slice())

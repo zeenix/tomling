@@ -18,7 +18,7 @@ pub struct Library<'l> {
     library_type: Option<Vec<LibraryType>>,
 }
 
-impl<'l> Library<'l> {
+impl Library<'_> {
     /// The name of the library.
     pub fn name(&self) -> Option<&str> {
         self.name

@@ -34,7 +34,7 @@ pub struct FullDevDependency<'f> {
     features: Option<Vec<&'f str>>,
 }
 
-impl<'f> FullDevDependency<'f> {
+impl FullDevDependency<'_> {
     /// The version of the dev dependency.
     pub fn version(&self) -> &str {
         self.version

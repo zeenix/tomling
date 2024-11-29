@@ -18,7 +18,7 @@ where
     T::deserialize(&Value::Table(value))
 }
 
-impl<'de, 'a> Deserializer<'de> for &'a Value<'de> {
+impl<'de> Deserializer<'de> for &Value<'de> {
     type Error = Error;
 
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -167,7 +167,7 @@ impl<'de, 'a> SeqDeserializer<'de, 'a> {
     }
 }
 
-impl<'de, 'a> SeqAccess<'de> for SeqDeserializer<'de, 'a> {
+impl<'de> SeqAccess<'de> for SeqDeserializer<'de, '_> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
@@ -194,7 +194,7 @@ impl<'de, 'a> MapDeserializer<'de, 'a> {
     }
 }
 
-impl<'de, 'a> MapAccess<'de> for MapDeserializer<'de, 'a> {
+impl<'de> MapAccess<'de> for MapDeserializer<'de, '_> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
