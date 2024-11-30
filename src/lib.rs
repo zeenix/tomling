@@ -7,6 +7,9 @@
     missing_docs
 )]
 #![warn(unreachable_pub, clippy::std_instead_of_core)]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/zeenix/tomling/fc40ab049d833cb79ee3ab9c441b0eebf05494ef/logo.svg"
+)]
 #![doc = include_str!("../README.md")]
 
 extern crate alloc;
