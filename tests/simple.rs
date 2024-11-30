@@ -4,19 +4,19 @@ fn simple_cargo_toml() {
 
     let mut map = Table::new();
     map.insert(
-        "package",
+        "package".into(),
         Value::Table({
             let mut package = Table::new();
-            package.insert("name", Value::String("example"));
-            package.insert("version", Value::String("0.1.0"));
-            package.insert("edition", Value::String("2021"));
-            package.insert("resolver", Value::String("2"));
+            package.insert("name".into(), Value::String("example".into()));
+            package.insert("version".into(), Value::String("0.1.0".into()));
+            package.insert("edition".into(), Value::String("2021".into()));
+            package.insert("resolver".into(), Value::String("2".into()));
             package.insert(
-                "authors",
+                "authors".into(),
                 Value::Array(
                     [
-                        Value::String("Alice Great <foo@bar.com>"),
-                        Value::String("Bob Less"),
+                        Value::String("Alice Great <foo@bar.com>".into()),
+                        Value::String("Bob Less".into()),
                     ]
                     .into_iter()
                     .collect(),
@@ -26,18 +26,18 @@ fn simple_cargo_toml() {
         }),
     );
     map.insert(
-        "dependencies",
+        "dependencies".into(),
         Value::Table({
             let mut dependencies = Table::new();
             dependencies.insert(
-                "serde",
+                "serde".into(),
                 Value::Table({
                     let mut serde = Table::new();
-                    serde.insert("version", Value::String("1.0"));
+                    serde.insert("version".into(), Value::String("1.0".into()));
                     serde.insert(
-                        "features",
+                        "features".into(),
                         Value::Array(
-                            [Value::String("std"), Value::String("derive")]
+                            [Value::String("std".into()), Value::String("derive".into())]
                                 .into_iter()
                                 .collect(),
                         ),
@@ -45,23 +45,23 @@ fn simple_cargo_toml() {
                     serde
                 }),
             );
-            dependencies.insert("regex", Value::String("1.5"));
+            dependencies.insert("regex".into(), Value::String("1.5".into()));
             dependencies
         }),
     );
     map.insert(
-        "target",
+        "target".into(),
         Value::Table({
             let mut target = Table::new();
             target.insert(
-                "cfg(unix)",
+                "cfg(unix)".into(),
                 Value::Table({
                     let mut cfg_unix = Table::new();
                     cfg_unix.insert(
-                        "build-dependencies",
+                        "build-dependencies".into(),
                         Value::Table({
                             let mut build_dependencies = Table::new();
-                            build_dependencies.insert("cc", Value::String("1.0.3"));
+                            build_dependencies.insert("cc".into(), Value::String("1.0.3".into()));
 
                             build_dependencies
                         }),
@@ -75,23 +75,23 @@ fn simple_cargo_toml() {
         }),
     );
     map.insert(
-        "features",
+        "features".into(),
         Value::Table({
             let mut features = Table::new();
             features.insert(
-                "default",
-                Value::Array([Value::String("serde")].into_iter().collect()),
+                "default".into(),
+                Value::Array([Value::String("serde".into())].into_iter().collect()),
             );
             features
         }),
     );
     map.insert(
-        "bin",
+        "bin".into(),
         Value::Array(
             [Value::Table({
                 let mut bin = Table::new();
-                bin.insert("name", Value::String("some-binary"));
-                bin.insert("path", Value::String("src/bin/my-binary.rs"));
+                bin.insert("name".into(), Value::String("some-binary".into()));
+                bin.insert("path".into(), Value::String("src/bin/my-binary.rs".into()));
                 bin
             })]
             .into_iter()

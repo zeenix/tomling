@@ -1,11 +1,14 @@
+use std::borrow::Cow;
+
 use crate::{
     array::{self, Array},
     table::{self, Table},
     Error, Value,
 };
 use serde::de::{
-    self, value::BorrowedStrDeserializer, DeserializeSeed, Deserializer, IntoDeserializer,
-    MapAccess, SeqAccess, Visitor,
+    self,
+    value::{BorrowedStrDeserializer, StrDeserializer},
+    DeserializeSeed, Deserializer, IntoDeserializer, MapAccess, SeqAccess, Visitor,
 };
 
 /// Deserialize a TOML document from a string. Requires the `serde` feature.
@@ -26,7 +29,8 @@ impl<'de> Deserializer<'de> for &Value<'de> {
         V: Visitor<'de>,
     {
         match self {
-            Value::String(s) => visitor.visit_borrowed_str(s),
+            Value::String(Cow::Borrowed(s)) => visitor.visit_borrowed_str(s),
+            Value::String(Cow::Owned(s)) => visitor.visit_str(s),
             Value::Integer(i) => visitor.visit_i64(*i),
             Value::Float(f) => visitor.visit_f64(*f),
             Value::Boolean(b) => visitor.visit_bool(*b),
@@ -40,7 +44,8 @@ impl<'de> Deserializer<'de> for &Value<'de> {
         V: Visitor<'de>,
     {
         match self {
-            Value::String(s) => visitor.visit_borrowed_str(s),
+            Value::String(Cow::Borrowed(s)) => visitor.visit_borrowed_str(s),
+            Value::String(Cow::Owned(s)) => visitor.visit_str(s),
             _ => Err(de::Error::invalid_type(
                 de::Unexpected::Other("non-string"),
                 &visitor,
@@ -141,7 +146,7 @@ impl<'de> Deserializer<'de> for &Value<'de> {
         V: Visitor<'de>,
     {
         match self {
-            Value::String(s) => visitor.visit_enum(s.into_deserializer()),
+            Value::String(s) => visitor.visit_enum(s.clone().into_deserializer()),
             // TODO: Support non-unit enums.
             _ => Err(de::Error::invalid_type(
                 de::Unexpected::Other("non-string"),
@@ -203,8 +208,13 @@ impl<'de> MapAccess<'de> for MapDeserializer<'de, '_> {
     {
         if let Some((key, value)) = self.iter.next() {
             self.value = Some(value);
-            seed.deserialize((BorrowedStrDeserializer::new(key)).into_deserializer())
-                .map(Some)
+            match key {
+                Cow::Owned(s) => seed.deserialize(StrDeserializer::new(s).into_deserializer()),
+                Cow::Borrowed(s) => {
+                    seed.deserialize(BorrowedStrDeserializer::new(s).into_deserializer())
+                }
+            }
+            .map(Some)
         } else {
             Ok(None)
         }
