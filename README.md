@@ -1,6 +1,20 @@
-# tomling
+<p align="center">
+  <a href="https://github.com/zeenix/tomling/actions/workflows/rust.yml">
+    <img alt="Build Status" src="https://github.com/zeenix/tomling/actions/workflows/rust.yml/badge.svg">
+  </a>
+  <a href="https://docs.rs/tomling/">
+    <img alt="API Documentation" src="https://docs.rs/tomling/badge.svg">
+  </a>
+  <a href="https://crates.io/crates/tomling">
+    <img alt="crates.io" src="https://img.shields.io/crates/v/tomling">
+  </a>
+</p>
 
-[![Build Status](https://github.com/zeenix/tomling/actions/workflows/rust.yml/badge.svg)](https://github.com/zeenix/tomling/actions/workflows/rust.yml) [![API Documentation](https://docs.rs/tomling/badge.svg)](https://docs.rs/tomling/) [![crates.io](https://img.shields.io/crates/v/tomling)](https://crates.io/crates/tomling)
+<p align="center">
+  <img alt="Project logo" src="https://raw.githubusercontent.com/zeenix/tomling/fc40ab049d833cb79ee3ab9c441b0eebf05494ef/logo.svg">
+</p>
+
+<h1 align="center">tomling</h1>
 
 `tomling` is a simple TOML parser API, that is designed to have minimal dependencies and is `no_std`
 compatible. The main target is Cargo manifests (`Cargo.toml` files) and hence why specific
