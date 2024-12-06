@@ -5,98 +5,68 @@ fn simple_cargo_toml() {
     let mut map = Table::new();
     map.insert(
         "package".into(),
-        Value::Table({
-            let mut package = Table::new();
-            package.insert("name".into(), Value::String("example".into()));
-            package.insert("version".into(), Value::String("0.1.0".into()));
-            package.insert("edition".into(), Value::String("2021".into()));
-            package.insert("resolver".into(), Value::String("2".into()));
-            package.insert(
-                "authors".into(),
-                Value::Array(
-                    [
-                        Value::String("Alice Great <foo@bar.com>".into()),
-                        Value::String("Bob Less".into()),
-                    ]
+        [
+            ("name", "example".into()),
+            ("version", "0.1.0".into()),
+            ("edition", "2021".into()),
+            ("resolver", "2".into()),
+            (
+                "authors",
+                ["Alice Great <foo@bar.com>", "Bob Less"]
                     .into_iter()
-                    .collect(),
-                ),
-            );
-            package
-        }),
+                    .collect::<Value>(),
+            ),
+        ]
+        .into_iter()
+        .collect(),
     );
     map.insert(
         "dependencies".into(),
-        Value::Table({
-            let mut dependencies = Table::new();
-            dependencies.insert(
-                "serde".into(),
-                Value::Table({
-                    let mut serde = Table::new();
-                    serde.insert("version".into(), Value::String("1.0".into()));
-                    serde.insert(
-                        "features".into(),
-                        Value::Array(
-                            [Value::String("std".into()), Value::String("derive".into())]
-                                .into_iter()
-                                .collect(),
-                        ),
-                    );
-                    serde
-                }),
-            );
-            dependencies.insert("regex".into(), Value::String("1.5".into()));
-            dependencies
-        }),
+        [
+            (
+                "serde",
+                [
+                    ("version", "1.0".into()),
+                    ("features", ["std", "derive"].into_iter().collect::<Value>()),
+                ]
+                .into_iter()
+                .collect::<Value>(),
+            ),
+            ("regex", "1.5".into()),
+        ]
+        .into_iter()
+        .collect(),
     );
     map.insert(
         "target".into(),
-        Value::Table({
-            let mut target = Table::new();
-            target.insert(
-                "cfg(unix)".into(),
-                Value::Table({
-                    let mut cfg_unix = Table::new();
-                    cfg_unix.insert(
-                        "build-dependencies".into(),
-                        Value::Table({
-                            let mut build_dependencies = Table::new();
-                            build_dependencies.insert("cc".into(), Value::String("1.0.3".into()));
-
-                            build_dependencies
-                        }),
-                    );
-
-                    cfg_unix
-                }),
-            );
-
-            target
-        }),
+        [(
+            "cfg(unix)",
+            [(
+                "build-dependencies",
+                [("cc", "1.0.3")].into_iter().collect::<Value>(),
+            )]
+            .into_iter()
+            .collect::<Value>(),
+        )]
+        .into_iter()
+        .collect(),
     );
     map.insert(
         "features".into(),
-        Value::Table({
-            let mut features = Table::new();
-            features.insert(
-                "default".into(),
-                Value::Array([Value::String("serde".into())].into_iter().collect()),
-            );
-            features
-        }),
+        [("default", ["serde"].into_iter().collect::<Value>())]
+            .into_iter()
+            .collect(),
     );
     map.insert(
         "bin".into(),
-        Value::Array(
-            [Value::Table({
-                let mut bin = Table::new();
-                bin.insert("name".into(), Value::String("some-binary".into()));
-                bin.insert("path".into(), Value::String("src/bin/my-binary.rs".into()));
-                bin
-            })]
-            .into_iter()
-            .collect(),
-        ),
+        [[
+            ("name", Value::from("some-binary")),
+            ("path", "src/bin/my-binary.rs".into()),
+        ]
+        .into_iter()
+        .collect::<Value>()]
+        .into_iter()
+        .collect(),
     );
 
     let parsed_map = parse(CARGO_TOML).unwrap();
