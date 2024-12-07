@@ -85,34 +85,20 @@ assert_eq!(binary.path(), Some("src/bin/my-binary.rs"));
 // Using the generic raw `TOML` parsing API:
 //
 let manifest = parse(CARGO_TOML).unwrap();
-let package = match manifest.get("package").unwrap() {
-    Value::Table(package) => package,
-    _ => panic!(),
-};
-assert_eq!(package.get("name").unwrap(), &Value::String("example".into()));
-assert_eq!(package.get("version").unwrap(), &Value::String("0.1.0".into()));
-assert_eq!(package.get("edition").unwrap(), &Value::String("2021".into()));
-assert_eq!(package.get("resolver").unwrap(), &Value::String("2".into()));
+let package = manifest.get("package").unwrap().as_table().unwrap();
+assert_eq!(package.get("name").unwrap().as_str().unwrap(), "example");
+assert_eq!(package.get("version").unwrap().as_str().unwrap(), "0.1.0");
+assert_eq!(package.get("edition").unwrap().as_str().unwrap(), "2021");
+assert_eq!(package.get("resolver").unwrap().as_str().unwrap(), "2");
 
-let deps = match manifest.get("dependencies").unwrap() {
-    Value::Table(deps) => deps,
-    _ => panic!(),
-};
-let serde = match deps.get("serde").unwrap() {
-    Value::Table(serde) => serde,
-    _ => panic!(),
-};
-assert_eq!(serde.get("version").unwrap(), &Value::String("1.0".into()));
-let serde_features = match serde.get("features").unwrap() {
-    Value::Array(features) => features.as_slice(),
-    _ => panic!(),
-};
-assert_eq!(serde_features, &[Value::String("std".into()), Value::String("derive".into())]);
-let regex = match deps.get("regex").unwrap() {
-    Value::String(regex) => regex,
-    _ => panic!(),
-};
-assert_eq!(&*regex, "1.5");
+let deps = manifest.get("dependencies").unwrap().as_table().unwrap();
+let serde = deps.get("serde").unwrap().as_table().unwrap();
+assert_eq!(serde.get("version").unwrap().as_str().unwrap(), "1.0");
+let serde_features =
+    serde.get("features").unwrap().as_array().unwrap().as_slice();
+assert_eq!(serde_features, &[Value::from("std"), "derive".into()]);
+let regex = deps.get("regex").unwrap().as_str().unwrap();
+assert_eq!(regex, "1.5");
 
 const CARGO_TOML: &'static str = r#"
 [package]

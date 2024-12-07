@@ -22,6 +22,79 @@ pub enum Value<'a> {
     Table(Table<'a>),
 }
 
+impl<'a> Value<'a> {
+    /// Returns the underlying `&str` if the `Value` is a string
+    pub fn as_str(&'a self) -> Option<&'a str> {
+        match self {
+            Self::String(s) => Some(s),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying `i64` if the `Value` is an integer
+    pub fn as_i64(&self) -> Option<i64> {
+        match self {
+            &Self::Integer(i) => Some(i),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying `f64` if the `Value` is a float
+    pub fn as_f64(&self) -> Option<f64> {
+        match self {
+            &Self::Float(f) => Some(f),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying `f64` if the `Value` is a float
+    pub fn as_bool(&self) -> Option<bool> {
+        match self {
+            &Self::Boolean(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying [`Array`] if the `Value` is an array
+    pub fn as_array(&'a self) -> Option<&'a Array<'a>> {
+        match self {
+            Self::Array(a) => Some(a),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying [`Table`] if the `Value` is a table
+    pub fn as_table(&'a self) -> Option<&'a Table<'a>> {
+        match self {
+            Self::Table(t) => Some(t),
+            _ => None,
+        }
+    }
+}
+
+impl<'a, V> FromIterator<V> for Value<'a>
+where
+    V: Into<Value<'a>>,
+{
+    fn from_iter<I: IntoIterator<Item = V>>(iter: I) -> Self {
+        Value::Array(iter.into_iter().map(|v| v.into()).collect())
+    }
+}
+
+impl<'a, K, V> FromIterator<(K, V)> for Value<'a>
+where
+    K: Into<Cow<'a, str>>,
+    V: Into<Value<'a>>,
+{
+    fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
+        Value::Table(
+            iter.into_iter()
+                .map(|(k, v)| (k.into(), v.into()))
+                .collect(),
+        )
+    }
+}
+
 macro_rules! impl_from {
     ($ty:ty => $variant:ident) => {
         impl<'a> From<$ty> for Value<'a> {
@@ -34,6 +107,7 @@ macro_rules! impl_from {
 
 impl_from!(Cow<'a, str> => String);
 impl_from!(&'a str => String);
+impl_from!(String => String);
 impl_from!(i64 => Integer);
 impl_from!(f64 => Float);
 impl_from!(bool => Boolean);

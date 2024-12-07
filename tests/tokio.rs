@@ -1,94 +1,65 @@
 #[test]
 fn tokio() {
-    use tomling::{parse, Value};
+    use tomling::parse;
 
     let parsed_map = parse(CARGO_TOML).unwrap();
 
     // Too much to check for everything. Let's check some keys and values.
-    let package = match parsed_map.get("package").unwrap() {
-        Value::Table(package) => package,
-        _ => panic!(),
-    };
-    assert_eq!(package.get("name").unwrap(), &Value::String("tokio".into()));
-    assert_eq!(
-        package.get("version").unwrap(),
-        &Value::String("1.41.1".into())
-    );
-    assert_eq!(
-        package.get("edition").unwrap(),
-        &Value::String("2021".into())
-    );
+    let package = parsed_map.get("package").unwrap().as_table().unwrap();
+    assert_eq!(package.get("name").unwrap().as_str().unwrap(), "tokio");
+    assert_eq!(package.get("version").unwrap().as_str().unwrap(), "1.41.1");
+    assert_eq!(package.get("edition").unwrap().as_str().unwrap(), "2021");
 
     // Let's check the dependencies, especially the complicated ones.
-    let dependencies = match parsed_map.get("dependencies").unwrap() {
-        Value::Table(dependencies) => dependencies,
-        _ => panic!(),
-    };
+    let dependencies = parsed_map.get("dependencies").unwrap().as_table().unwrap();
 
     // bytes
-    let bytes = match dependencies.get("bytes").unwrap() {
-        Value::Table(bytes) => bytes,
-        _ => panic!(),
-    };
-    assert_eq!(
-        bytes.get("version").unwrap(),
-        &Value::String("1.0.0".into())
-    );
-    assert_eq!(bytes.get("optional").unwrap(), &Value::Boolean(true));
+    let bytes = dependencies.get("bytes").unwrap().as_table().unwrap();
+    assert_eq!(bytes.get("version").unwrap().as_str().unwrap(), "1.0.0");
+    assert_eq!(bytes.get("optional").unwrap().as_bool().unwrap(), true);
 
-    let dev_deps = match parsed_map.get("dev-dependencies").unwrap() {
-        Value::Table(deps) => deps,
-        _ => panic!(),
-    };
-    let tokio_test = match dev_deps.get("tokio-test").unwrap() {
-        Value::Table(t) => t,
-        _ => panic!(),
-    };
+    let dev_deps = parsed_map
+        .get("dev-dependencies")
+        .unwrap()
+        .as_table()
+        .unwrap();
+    let tokio_test = dev_deps.get("tokio-test").unwrap().as_table().unwrap();
     assert_eq!(
-        tokio_test.get("version").unwrap(),
-        &Value::String("0.4.0".into())
+        tokio_test.get("version").unwrap().as_str().unwrap(),
+        "0.4.0"
     );
     assert_eq!(
-        tokio_test.get("path").unwrap(),
-        &Value::String("../tokio-test".into())
+        tokio_test.get("path").unwrap().as_str().unwrap(),
+        "../tokio-test"
     );
 
     // cfg-using dependencies
-    let target = match parsed_map.get("target") {
-        Some(Value::Table(target)) => target,
-        _ => panic!(),
-    };
+    let target = parsed_map.get("target").unwrap().as_table().unwrap();
     // wasm-bindgen-test
     let version = target
         .get("cfg(all(target_family = \"wasm\", not(target_os = \"wasi\")))")
-        .and_then(|c| match c {
-            Value::Table(c) => c.get("dev-dependencies"),
-            _ => None,
-        })
-        .and_then(|d| match d {
-            Value::Table(d) => d.get("wasm-bindgen-test"),
-            _ => None,
+        .and_then(|c| {
+            c.as_table()?
+                .get("dev-dependencies")?
+                .as_table()?
+                .get("wasm-bindgen-test")?
+                .as_str()
         })
         .unwrap();
-    assert_eq!(version, &Value::String("0.3.0".into()));
+    assert_eq!(version, "0.3.0");
 
     // rand
     let version = target
         .get("cfg(not(all(target_family = \"wasm\", target_os = \"unknown\")))")
-        .and_then(|c| match c {
-            Value::Table(c) => c.get("dev-dependencies"),
-            _ => None,
-        })
-        .and_then(|d| match d {
-            Value::Table(d) => d.get("rand"),
-            _ => None,
-        })
-        .and_then(|a| match a {
-            Value::String(a) => Some(a),
-            _ => None,
+        .and_then(|c| {
+            c.as_table()?
+                .get("dev-dependencies")?
+                .as_table()?
+                .get("rand")?
+                .as_str()
         })
         .unwrap();
-    assert_eq!(*version, "0.8.0");
+    assert_eq!(version, "0.8.0");
 }
 
 #[cfg(feature = "cargo-toml")]

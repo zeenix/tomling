@@ -17,16 +17,10 @@ use winnow::{
 /// Parse a TOML document.
 pub fn parse(input: &str) -> Result<Table<'_>, Error> {
     let key_value = parse_key_value.map(|(keys, value)| (None, keys, value));
-    let table_header = parse_table_header.map(|(header, is_array)| {
-        (
-            Some((header, is_array)),
-            Vec::new(),
-            Value::Table(Table::new()),
-        )
-    });
-    let whitespace = multispace1.map(|_| (None, Vec::new(), Value::Table(Table::new())));
-    let comment_line =
-        parse_comment_newline.map(|_| (None, Vec::new(), Value::Table(Table::new())));
+    let table_header = parse_table_header
+        .map(|(header, is_array)| (Some((header, is_array)), Vec::new(), Table::new().into()));
+    let whitespace = multispace1.map(|_| (None, Vec::new(), Table::new().into()));
+    let comment_line = parse_comment_newline.map(|_| (None, Vec::new(), Table::new().into()));
     let line_parser = alt((table_header, key_value, whitespace, comment_line));
 
     repeat(1.., line_parser)
@@ -39,11 +33,11 @@ pub fn parse(input: &str) -> Result<Table<'_>, Error> {
                         let key = header.last().expect("Header should not be empty").clone();
                         let entry = map
                             .entry(key.clone())
-                            .or_insert_with(|| Value::Array(Array::new()));
+                            .or_insert_with(|| Array::new().into());
                         if let Value::Array(array) = entry {
                             // Append a new empty table to the array
                             let new_table = Table::new();
-                            array.push(Value::Table(new_table));
+                            array.push(new_table.into());
 
                             // Update current_table to reference the new table
                             current_table = Some(vec![key]);
@@ -139,23 +133,23 @@ fn parse_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
 
 /// Parses an integer value
 fn parse_integer<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
-    numbers::integer(input).map(Value::Integer)
+    numbers::integer(input).map(Into::into)
 }
 
 /// Parses a float value
 fn parse_float<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
-    numbers::float(input).map(Value::Float)
+    numbers::float(input).map(Into::into)
 }
 
 /// Parses a boolean value
 fn parse_boolean<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
-    numbers::boolean(input).map(Value::Boolean)
+    numbers::boolean(input).map(Into::into)
 }
 
 /// Parses an array of values
 fn parse_array<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     delimited('[', cut_err(parse_multiline_array_values), cut_err(']'))
-        .map(Value::Array)
+        .map(Into::into)
         .parse_next(input)
 }
 
@@ -188,7 +182,7 @@ fn parse_inline_table<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextErro
         separated(0.., separated_pair(parse_key, '=', parse_value), ','),
         '}',
     )
-    .map(|pairs: Vec<(Cow<'i, str>, Value<'i>)>| Value::Table(pairs.into_iter().collect()))
+    .map(|pairs: Vec<(Cow<'i, str>, Value<'i>)>| pairs.into_iter().collect())
     .parse_next(input)
 }
 
@@ -200,7 +194,7 @@ fn insert_nested_key<'a>(map: &mut Table<'a>, keys: &[Cow<'a, str>], value: Valu
         } else {
             let entry = map
                 .entry(first.clone())
-                .or_insert_with(|| Value::Table(Table::new()));
+                .or_insert_with(|| Table::new().into());
 
             if let Value::Table(ref mut nested_map) = entry {
                 insert_nested_key(nested_map, rest, value);

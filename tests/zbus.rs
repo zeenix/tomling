@@ -5,162 +5,89 @@ fn zbus() {
     let parsed_map = parse(CARGO_TOML).unwrap();
 
     // Too much to check for everything. Let's check some keys and values.
-    let package = match parsed_map.get("package").unwrap() {
-        Value::Table(package) => package,
-        _ => panic!(),
-    };
-    assert_eq!(package.get("name").unwrap(), &Value::String("zbus".into()));
-    assert_eq!(
-        package.get("version").unwrap(),
-        &Value::String("5.1.1".into())
-    );
-    assert_eq!(
-        package.get("edition").unwrap(),
-        &Value::String("2021".into())
-    );
+    let package = parsed_map.get("package").unwrap().as_table().unwrap();
+    assert_eq!(package.get("name").unwrap().as_str().unwrap(), "zbus");
+    assert_eq!(package.get("version").unwrap().as_str().unwrap(), "5.1.1");
+    assert_eq!(package.get("edition").unwrap().as_str().unwrap(), "2021");
 
     // Let's check the dependencies, especially the complicated ones.
-    let dependencies = match parsed_map.get("dependencies").unwrap() {
-        Value::Table(dependencies) => dependencies,
-        _ => panic!(),
-    };
+    let dependencies = parsed_map.get("dependencies").unwrap().as_table().unwrap();
 
     // Serde
-    let serde = match dependencies.get("serde").unwrap() {
-        Value::Table(serde) => serde,
-        _ => panic!(),
-    };
-    assert_eq!(
-        serde.get("version").unwrap(),
-        &Value::String("1.0.200".into())
-    );
+    let serde = dependencies.get("serde").unwrap().as_table().unwrap();
+    assert_eq!(serde.get("version").unwrap().as_str().unwrap(), "1.0.200");
     assert_eq!(
         serde.get("features").unwrap(),
-        &Value::Array([Value::String("derive".into())].into_iter().collect())
+        &["derive"].into_iter().collect::<Value>()
     );
     // Tokio
-    let tokio = match dependencies.get("tokio").unwrap() {
-        Value::Table(tokio) => tokio,
-        _ => panic!(),
-    };
-    assert_eq!(
-        tokio.get("version").unwrap(),
-        &Value::String("1.37.0".into())
-    );
-    assert_eq!(tokio.get("optional").unwrap(), &Value::Boolean(true));
+    let tokio = dependencies.get("tokio").unwrap().as_table().unwrap();
+    assert_eq!(tokio.get("version").unwrap().as_str().unwrap(), "1.37.0");
+    assert_eq!(tokio.get("optional").unwrap().as_bool().unwrap(), true);
     assert_eq!(
         tokio.get("features").unwrap(),
-        &Value::Array(
-            [
-                Value::String("rt".into()),
-                Value::String("net".into()),
-                Value::String("time".into()),
-                Value::String("fs".into()),
-                Value::String("io-util".into()),
-                Value::String("process".into()),
-                Value::String("sync".into()),
-                Value::String("tracing".into()),
-            ]
+        &["rt", "net", "time", "fs", "io-util", "process", "sync", "tracing",]
             .into_iter()
-            .collect()
-        )
+            .collect::<Value>()
     );
 
     // cfg-using dependencies
-    let target = match parsed_map.get("target") {
-        Some(Value::Table(target)) => target,
-        _ => panic!(),
-    };
+    let target = parsed_map.get("target").unwrap().as_table().unwrap();
     // Nix
     let nix = target
         .get("cfg(unix)")
-        .and_then(|c| match c {
-            Value::Table(c) => c.get("dependencies"),
-            _ => None,
-        })
-        .and_then(|d| match d {
-            Value::Table(d) => d.get("nix"),
-            _ => None,
-        })
-        .and_then(|n| match n {
-            Value::Table(n) => Some(n),
-            _ => None,
+        .and_then(|v| {
+            v.as_table()?
+                .get("dependencies")?
+                .as_table()?
+                .get("nix")?
+                .as_table()
         })
         .unwrap();
-    assert_eq!(nix.get("version").unwrap(), &Value::String("0.29".into()));
-    assert_eq!(nix.get("default-features").unwrap(), &Value::Boolean(false));
+    assert_eq!(nix.get("version").unwrap().as_str().unwrap(), "0.29");
+    assert_eq!(
+        nix.get("default-features").unwrap().as_bool().unwrap(),
+        false
+    );
     assert_eq!(
         nix.get("features").unwrap(),
-        &Value::Array(
-            [
-                Value::String("socket".into()),
-                Value::String("uio".into()),
-                Value::String("user".into()),
-            ]
-            .into_iter()
-            .collect()
-        )
+        &["socket", "uio", "user"].into_iter().collect::<Value>()
     );
     // async-recursion
     let version = target
         .get("cfg(any(target_os = \"macos\", windows))")
-        .and_then(|c| match c {
-            Value::Table(c) => c.get("dependencies"),
-            _ => None,
-        })
-        .and_then(|d| match d {
-            Value::Table(d) => d.get("async-recursion"),
-            _ => None,
-        })
-        .and_then(|a| match a {
-            Value::String(a) => Some(a),
-            _ => None,
+        .and_then(|v| {
+            v.as_table()?
+                .get("dependencies")?
+                .as_table()?
+                .get("async-recursion")?
+                .as_str()
         })
         .unwrap();
-    assert_eq!(*version, "1.1.1");
+    assert_eq!(version, "1.1.1");
 
     // Now array of tables
-    let bench = match parsed_map.get("bench") {
-        Some(Value::Array(bench)) => bench.get(0),
-        _ => None,
-    }
-    .and_then(|b| match b {
-        Value::Table(b) => Some(b),
-        _ => None,
-    })
-    .unwrap();
-    assert_eq!(
-        bench.get("name").unwrap(),
-        &Value::String("benchmarks".into())
-    );
-    assert_eq!(bench.get("harness").unwrap(), &Value::Boolean(false));
+    let bench = parsed_map
+        .get("bench")
+        .and_then(|v| v.as_array()?[0].as_table())
+        .unwrap();
+    assert_eq!(bench.get("name").unwrap().as_str().unwrap(), "benchmarks");
+    assert_eq!(bench.get("harness").unwrap().as_bool().unwrap(), false);
 
     // Finally, the examples
-    let examples = match parsed_map.get("example") {
-        Some(Value::Array(example)) => example,
-        _ => panic!(),
-    };
+    let examples = parsed_map.get("example").unwrap().as_array().unwrap();
     let names = ["screen-brightness", "screen-brightness2"];
     let paths = [
         "examples/screen-brightness.rs",
         "examples/screen-brightness2.rs",
     ];
     for (i, example) in examples.iter().enumerate() {
-        let example = match example {
-            Value::Table(e) => e,
-            _ => panic!(),
-        };
-        assert_eq!(
-            example.get("name").unwrap(),
-            &Value::String(names[i].into())
-        );
-        assert_eq!(
-            example.get("path").unwrap(),
-            &Value::String(paths[i].into())
-        );
+        let example = example.as_table().unwrap();
+        assert_eq!(example.get("name").unwrap().as_str().unwrap(), names[i]);
+        assert_eq!(example.get("path").unwrap().as_str().unwrap(), paths[i]);
         assert_eq!(
             example.get("required-features").unwrap(),
-            &Value::Array([Value::String("blocking-api".into())].into_iter().collect())
+            &["blocking-api"].into_iter().collect::<Value>()
         );
     }
 }
