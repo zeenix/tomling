@@ -11,6 +11,13 @@ pub enum Error {
     ///
     /// This variant is only available when the `serde` feature is enabled.
     Deserialize(DeserializeError),
+    /// Type conversion error.
+    Convert {
+        /// The type from which the conversion was attempted.
+        from: &'static str,
+        /// The type to which the conversion was attempted.
+        to: &'static str,
+    },
 }
 
 // TODO: Implement core::error::Error instead when we can bump the MSRV to 1.81.
@@ -21,6 +28,7 @@ impl std::error::Error for Error {
             Error::Parse(p) => Some(p),
             #[cfg(feature = "serde")]
             Error::Deserialize(d) => Some(d),
+            Error::Convert { .. } => None,
         }
     }
 }
@@ -31,6 +39,7 @@ impl alloc::fmt::Display for Error {
             Error::Parse(p) => write!(f, "{p}"),
             #[cfg(feature = "serde")]
             Error::Deserialize(s) => write!(f, "{s}"),
+            Error::Convert { from, to } => write!(f, "cannot convert from {from} to {to}"),
         }
     }
 }
