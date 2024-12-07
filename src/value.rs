@@ -139,6 +139,20 @@ impl_try_from!(Boolean => bool);
 impl_try_from!(Array => Array<'a>);
 impl_try_from!(Table => Table<'a>);
 
+impl<'a> TryFrom<Value<'a>> for &'a str {
+    type Error = crate::Error;
+
+    fn try_from(value: Value<'a>) -> Result<Self, Self::Error> {
+        match value {
+            Value::String(Cow::Borrowed(s)) => Ok(s),
+            _ => Err(crate::Error::Convert {
+                from: "tomling::Value",
+                to: "&str",
+            }),
+        }
+    }
+}
+
 macro_rules! impl_try_from_ref {
     ($variant:ident => $ty:ty) => {
         impl<'a, 'b> TryFrom<&'a Value<'b>> for &'a $ty {
