@@ -8,7 +8,8 @@ use crate::{Table, Value};
 #[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct Package<'p> {
     name: &'p str,
-    version: &'p str,
+    #[serde(borrow)]
+    version: WorkspaceInheritable<&'p str>,
     edition: Option<RustEdition>,
     #[serde(rename = "rust-version")]
     rust_version: Option<&'p str>,
@@ -45,8 +46,8 @@ impl<'p> Package<'p> {
     }
 
     /// The package version.
-    pub fn version(&self) -> &str {
-        self.version
+    pub fn version(&self) -> &WorkspaceInheritable<&'p str> {
+        &self.version
     }
 
     /// The Rust edition.

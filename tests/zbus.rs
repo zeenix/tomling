@@ -100,7 +100,7 @@ fn zbus_serde() {
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
     assert_eq!(manifest.package().name(), "zbus");
-    assert_eq!(manifest.package().version(), "5.1.1");
+    assert_eq!(manifest.package().version(), &"5.1.1".into());
     assert_eq!(manifest.package().edition().unwrap(), RustEdition::E2021);
 
     let serde = match manifest.dependencies().unwrap().by_name("serde").unwrap() {

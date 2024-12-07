@@ -69,7 +69,7 @@ fn tokio_serde() {
 
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
     assert_eq!(manifest.package().name(), "tokio");
-    assert_eq!(manifest.package().version(), "1.41.1");
+    assert_eq!(manifest.package().version(), &"1.41.1".into());
     assert_eq!(manifest.package().edition().unwrap(), RustEdition::E2021);
 
     let bytes = match manifest.dependencies().unwrap().by_name("bytes").unwrap() {
