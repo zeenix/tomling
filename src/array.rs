@@ -93,6 +93,15 @@ impl<'i, 'a> Iterator for Iter<'i, 'a> {
     }
 }
 
+impl<'a> IntoIterator for Array<'a> {
+    type Item = Value<'a>;
+    type IntoIter = alloc::vec::IntoIter<Value<'a>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
 impl<'a> Accumulate<Value<'a>> for Array<'a> {
     fn initial(capacity: Option<usize>) -> Self {
         Self(capacity.map(Vec::with_capacity).unwrap_or_default())

@@ -7,7 +7,12 @@ fn simple_cargo_toml() {
         "package".into(),
         [
             ("name", "example".into()),
-            ("version", "0.1.0".into()),
+            (
+                "version",
+                [("workspace", Value::from(true))]
+                    .into_iter()
+                    .collect::<Value>(),
+            ),
             ("edition", "2021".into()),
             ("resolver", "2".into()),
             (
@@ -81,10 +86,14 @@ fn simple_cargo_toml_serde() {
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
     assert_eq!(manifest.package().name(), "example");
-    assert_eq!(manifest.package().version(), "0.1.0");
-    assert_eq!(manifest.package().edition().unwrap(), RustEdition::E2021);
+    assert!(manifest.package().version().inherited());
+    assert_eq!(
+        manifest.package().edition().unwrap().uninherited().unwrap(),
+        &RustEdition::E2021,
+    );
     assert_eq!(manifest.package().resolver().unwrap(), ResolverVersion::V2);
     let authors = manifest.package().authors().unwrap();
+    let authors = authors.uninherited().unwrap();
     let alice = &authors[0];
     assert_eq!(alice.name(), "Alice Great");
     assert_eq!(alice.email(), Some("foo@bar.com"));
@@ -131,7 +140,7 @@ fn simple_cargo_toml_serde() {
 const CARGO_TOML: &str = r#"
 [package]
 name = "example"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 authors = ["Alice Great <foo@bar.com>", "Bob Less"]
 resolver = "2"
