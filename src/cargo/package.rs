@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use serde::Deserialize;
 
 use super::Author;
-use crate::Table;
+use crate::{Table, Value};
 
 /// The package information.
 #[derive(Debug, Deserialize, Clone, PartialEq)]
@@ -172,6 +172,70 @@ impl<'p> Package<'p> {
     /// The resolver version.
     pub fn resolver(&self) -> Option<ResolverVersion> {
         self.resolver
+    }
+}
+
+/// The property inheritable from the workspace.
+#[derive(Debug, Clone, PartialEq)]
+pub enum WorkspaceInheritable<W> {
+    /// The value.
+    Uninherited(W),
+    /// Inherit from the workspace.
+    Inherited,
+}
+
+impl<W> WorkspaceInheritable<W> {
+    /// Get the value if it is uninherited.
+    pub fn uninherited(&self) -> Option<&W> {
+        match self {
+            Self::Uninherited(value) => Some(value),
+            Self::Inherited => None,
+        }
+    }
+
+    /// If it is inherited from the workspace.
+    pub fn inherited(&self) -> bool {
+        matches!(self, Self::Inherited)
+    }
+}
+
+impl<T> WorkspaceInheritable<Vec<T>> {
+    /// Get the value as a slice if it is uninherited.
+    pub fn as_slice(&self) -> WorkspaceInheritable<&[T]> {
+        match self {
+            Self::Uninherited(value) => WorkspaceInheritable::Uninherited(value.as_slice()),
+            Self::Inherited => WorkspaceInheritable::Inherited,
+        }
+    }
+}
+
+impl<W> From<W> for WorkspaceInheritable<W> {
+    fn from(value: W) -> Self {
+        Self::Uninherited(value)
+    }
+}
+
+impl<'value, 'de: 'value, W> Deserialize<'de> for WorkspaceInheritable<W>
+where
+    W: TryFrom<Value<'value>, Error = crate::Error>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<WorkspaceInheritable<W>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        match <Value<'value>>::deserialize(deserializer)? {
+            Value::Table(table) => {
+                table
+                    .get("workspace")
+                    .and_then(|v| (v == &Value::Boolean(true)).then_some(()))
+                    .ok_or_else(|| serde::de::Error::missing_field("workspace"))?;
+                Ok(Self::Inherited)
+            }
+            value => value
+                .try_into()
+                .map(Self::Uninherited)
+                .map_err(serde::de::Error::custom),
+        }
     }
 }
 
