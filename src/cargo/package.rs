@@ -8,27 +8,28 @@ use crate::{Table, Value};
 #[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct Package<'p> {
     name: &'p str,
-    version: &'p str,
-    edition: Option<RustEdition>,
+    #[serde(borrow)]
+    version: WorkspaceInheritable<&'p str>,
+    edition: Option<WorkspaceInheritable<RustEdition>>,
     #[serde(rename = "rust-version")]
-    rust_version: Option<&'p str>,
-    authors: Option<Vec<Author<'p>>>,
-    description: Option<&'p str>,
-    documentation: Option<&'p str>,
-    readme: Option<&'p str>,
-    homepage: Option<&'p str>,
-    repository: Option<&'p str>,
-    license: Option<&'p str>,
-    license_file: Option<&'p str>,
-    keywords: Option<Vec<&'p str>>,
-    categories: Option<Vec<&'p str>>,
+    rust_version: Option<WorkspaceInheritable<&'p str>>,
+    authors: Option<WorkspaceInheritable<Vec<Author<'p>>>>,
+    description: Option<WorkspaceInheritable<&'p str>>,
+    documentation: Option<WorkspaceInheritable<&'p str>>,
+    readme: Option<WorkspaceInheritable<&'p str>>,
+    homepage: Option<WorkspaceInheritable<&'p str>>,
+    repository: Option<WorkspaceInheritable<&'p str>>,
+    license: Option<WorkspaceInheritable<&'p str>>,
+    license_file: Option<WorkspaceInheritable<&'p str>>,
+    keywords: Option<WorkspaceInheritable<Vec<&'p str>>>,
+    categories: Option<WorkspaceInheritable<Vec<&'p str>>>,
     workspace: Option<&'p str>,
     build: Option<&'p str>,
     links: Option<&'p str>,
-    publish: Option<bool>,
+    publish: Option<WorkspaceInheritable<bool>>,
     metadata: Option<Table<'p>>,
-    include: Option<Vec<&'p str>>,
-    exclude: Option<Vec<&'p str>>,
+    include: Option<WorkspaceInheritable<Vec<&'p str>>>,
+    exclude: Option<WorkspaceInheritable<Vec<&'p str>>>,
     #[serde(rename = "default-run")]
     default_run: Option<&'p str>,
     autobins: Option<bool>,
@@ -45,68 +46,68 @@ impl<'p> Package<'p> {
     }
 
     /// The package version.
-    pub fn version(&self) -> &str {
-        self.version
+    pub fn version(&self) -> &WorkspaceInheritable<&'p str> {
+        &self.version
     }
 
     /// The Rust edition.
-    pub fn edition(&self) -> Option<RustEdition> {
-        self.edition
+    pub fn edition(&self) -> Option<&WorkspaceInheritable<RustEdition>> {
+        self.edition.as_ref()
     }
 
     /// The required Rust version.
-    pub fn rust_version(&self) -> Option<&str> {
-        self.rust_version
+    pub fn rust_version(&self) -> Option<&WorkspaceInheritable<&'p str>> {
+        self.rust_version.as_ref()
     }
 
     /// The list of authors.
-    pub fn authors(&self) -> Option<&[Author<'p>]> {
-        self.authors.as_deref()
+    pub fn authors(&self) -> Option<WorkspaceInheritable<&[Author<'p>]>> {
+        self.authors.as_ref().map(WorkspaceInheritable::as_slice)
     }
 
     /// The package description.
-    pub fn description(&self) -> Option<&str> {
-        self.description
+    pub fn description(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.description.clone()
     }
 
     /// The package documentation URL.
-    pub fn documentation(&self) -> Option<&str> {
-        self.documentation
+    pub fn documentation(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.documentation.clone()
     }
 
     /// The path to the README file.
-    pub fn readme(&self) -> Option<&str> {
-        self.readme
+    pub fn readme(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.readme.clone()
     }
 
     /// The package homepage URL.
-    pub fn homepage(&self) -> Option<&str> {
-        self.homepage
+    pub fn homepage(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.homepage.clone()
     }
 
     /// The package repository URL.
-    pub fn repository(&self) -> Option<&str> {
-        self.repository
+    pub fn repository(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.repository.clone()
     }
 
     /// The package license.
-    pub fn license(&self) -> Option<&str> {
-        self.license
+    pub fn license(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.license.clone()
     }
 
     /// The path to the license file.
-    pub fn license_file(&self) -> Option<&str> {
-        self.license_file
+    pub fn license_file(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.license_file.clone()
     }
 
     /// The package keywords.
-    pub fn keywords(&self) -> Option<&[&str]> {
-        self.keywords.as_deref()
+    pub fn keywords(&self) -> Option<WorkspaceInheritable<&[&str]>> {
+        self.keywords.as_ref().map(WorkspaceInheritable::as_slice)
     }
 
     /// The package categories.
-    pub fn categories(&self) -> Option<&[&str]> {
-        self.categories.as_deref()
+    pub fn categories(&self) -> Option<WorkspaceInheritable<&[&str]>> {
+        self.categories.as_ref().map(WorkspaceInheritable::as_slice)
     }
 
     /// The workspace path.
@@ -125,8 +126,8 @@ impl<'p> Package<'p> {
     }
 
     /// Whether the package should be published.
-    pub fn publish(&self) -> Option<bool> {
-        self.publish
+    pub fn publish(&self) -> Option<WorkspaceInheritable<bool>> {
+        self.publish.clone()
     }
 
     /// The package metadata.
@@ -135,13 +136,13 @@ impl<'p> Package<'p> {
     }
 
     /// The paths to include.
-    pub fn include(&self) -> Option<&[&str]> {
-        self.include.as_deref()
+    pub fn include(&self) -> Option<WorkspaceInheritable<&[&str]>> {
+        self.include.as_ref().map(WorkspaceInheritable::as_slice)
     }
 
     /// The paths to exclude.
-    pub fn exclude(&self) -> Option<&[&str]> {
-        self.exclude.as_deref()
+    pub fn exclude(&self) -> Option<WorkspaceInheritable<&[&str]>> {
+        self.exclude.as_ref().map(WorkspaceInheritable::as_slice)
     }
 
     /// The default run command.
@@ -252,19 +253,38 @@ pub enum ResolverVersion {
 }
 
 /// The Rust edition.
-#[derive(Debug, Deserialize, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum RustEdition {
     /// Edition 2015.
-    #[serde(rename = "2015")]
     E2015,
     /// Edition 2018.
-    #[serde(rename = "2018")]
     E2018,
     /// Edition 2021.
-    #[serde(rename = "2021")]
     E2021,
     /// Edition 2024.
-    #[serde(rename = "2024")]
     E2024,
+}
+
+impl TryFrom<Value<'_>> for RustEdition {
+    type Error = crate::Error;
+
+    fn try_from(value: Value<'_>) -> Result<Self, Self::Error> {
+        match value {
+            Value::String(value) => match value.as_ref() {
+                "2015" => Ok(Self::E2015),
+                "2018" => Ok(Self::E2018),
+                "2021" => Ok(Self::E2021),
+                "2024" => Ok(Self::E2024),
+                _ => Err(crate::Error::Convert {
+                    from: "tomling::Value",
+                    to: "tomling::cargo::RustEdition",
+                }),
+            },
+            _ => Err(crate::Error::Convert {
+                from: "tomling::Value",
+                to: "tomling::cargo::RustEdition",
+            }),
+        }
+    }
 }

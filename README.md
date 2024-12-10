@@ -35,10 +35,11 @@ use tomling::{
 let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
 assert_eq!(manifest.package().name(), "example");
-assert_eq!(manifest.package().version(), "0.1.0");
-assert_eq!(manifest.package().edition().unwrap(), RustEdition::E2021);
+assert_eq!(manifest.package().version(), &"0.1.0".into());
+assert_eq!(manifest.package().edition().unwrap().uninherited().unwrap(), &RustEdition::E2021);
 assert_eq!(manifest.package().resolver().unwrap(), ResolverVersion::V2);
 let authors = manifest.package().authors().unwrap();
+let authors = authors.uninherited().unwrap();
 let alice = &authors[0];
 assert_eq!(alice.name(), "Alice Great");
 assert_eq!(alice.email(), Some("foo@bar.com"));
