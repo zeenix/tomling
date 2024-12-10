@@ -178,3 +178,20 @@ impl_try_from_ref!(Float => f64);
 impl_try_from_ref!(Boolean => bool);
 impl_try_from_ref!(Array => Array<'b>);
 impl_try_from_ref!(Table => Table<'b>);
+
+impl<'value, T> TryFrom<Value<'value>> for Vec<T>
+where
+    T: TryFrom<Value<'value>, Error = crate::Error>,
+{
+    type Error = crate::Error;
+
+    fn try_from(value: Value<'value>) -> Result<Self, Self::Error> {
+        match value {
+            Value::Array(array) => array.into_iter().map(|e| e.try_into()).collect(),
+            _ => Err(crate::Error::Convert {
+                from: "tomling::Value",
+                to: "Vec<T>",
+            }),
+        }
+    }
+}
