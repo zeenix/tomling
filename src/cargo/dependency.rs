@@ -2,7 +2,7 @@ use alloc::{collections::BTreeMap, vec::Vec};
 use serde::Deserialize;
 
 /// The dependencies.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Dependencies<'d>(#[serde(borrow)] BTreeMap<&'d str, Dependency<'d>>);
 
 impl<'d> Dependencies<'d> {
@@ -18,7 +18,7 @@ impl<'d> Dependencies<'d> {
 }
 
 /// A dependency.
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(untagged)]
 pub enum Dependency<'d> {
     /// A dependency defined only by required version.
@@ -28,7 +28,7 @@ pub enum Dependency<'d> {
 }
 
 /// A full dependency definition.
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, PartialEq)]
 pub struct FullDependency<'f> {
     version: &'f str,
     optional: Option<bool>,
