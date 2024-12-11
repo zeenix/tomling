@@ -95,7 +95,7 @@ fn zbus() {
 #[cfg(feature = "cargo-toml")]
 #[test]
 fn zbus_serde() {
-    use tomling::cargo::{Dependency, LibraryType, Manifest, RustEdition};
+    use tomling::cargo::{package::RustEdition, Dependency, LibraryType, Manifest};
 
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 

@@ -1,3 +1,5 @@
+//! Cargo package information.
+
 use alloc::vec::Vec;
 use serde::Deserialize;
 

@@ -81,7 +81,9 @@ fn simple_cargo_toml() {
 #[cfg(feature = "cargo-toml")]
 #[test]
 fn simple_cargo_toml_serde() {
-    use tomling::cargo::{BuildDependency, Dependency, Manifest, ResolverVersion, RustEdition};
+    use tomling::cargo::{
+        package::RustEdition, BuildDependency, Dependency, Manifest, ResolverVersion,
+    };
 
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
