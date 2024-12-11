@@ -13,6 +13,7 @@ mod library;
 mod manifest;
 pub mod package;
 mod resolver_version;
+mod rust_edition;
 mod target;
 mod test;
 
@@ -27,5 +28,6 @@ pub use library::*;
 pub use manifest::*;
 pub use package::Package;
 pub use resolver_version::*;
+pub use rust_edition::*;
 pub use target::*;
 pub use test::*;
