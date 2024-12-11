@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 use serde::Deserialize;
 
-use super::Author;
+use super::{Author, ResolverVersion};
 use crate::{Table, Value};
 
 /// The package information.
@@ -238,18 +238,6 @@ where
                 .map_err(serde::de::Error::custom),
         }
     }
-}
-
-/// The resolver version.
-#[derive(Debug, Deserialize, Copy, Clone, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum ResolverVersion {
-    /// Resolver version 1.
-    #[serde(rename = "1")]
-    V1,
-    /// Resolver version 2.
-    #[serde(rename = "2")]
-    V2,
 }
 
 /// The Rust edition.
