@@ -1,4 +1,5 @@
 use alloc::borrow::Cow;
+use serde::Deserialize;
 
 use crate::Value;
 
@@ -54,5 +55,16 @@ impl<'value> TryFrom<Value<'value>> for Author<'value> {
                 to: "tomling::cargo::Author",
             }),
         }
+    }
+}
+
+impl<'a, 'de: 'a> Deserialize<'de> for Author<'a> {
+    fn deserialize<D>(deserializer: D) -> Result<Author<'a>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = Value::deserialize(deserializer)?;
+
+        value.try_into().map_err(serde::de::Error::custom)
     }
 }
