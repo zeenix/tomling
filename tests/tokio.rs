@@ -68,10 +68,11 @@ fn tokio_serde() {
     use tomling::cargo::{Dependency, DevDependency, Manifest, RustEdition};
 
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
-    assert_eq!(manifest.package().name(), "tokio");
-    assert_eq!(manifest.package().version(), &"1.41.1".into());
+    let package = manifest.package().unwrap();
+    assert_eq!(package.name(), "tokio");
+    assert_eq!(package.version(), &"1.41.1".into());
     assert_eq!(
-        manifest.package().edition().unwrap().uninherited().unwrap(),
+        package.edition().unwrap().uninherited().unwrap(),
         &RustEdition::E2021
     );
 

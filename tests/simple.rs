@@ -85,14 +85,15 @@ fn simple_cargo_toml_serde() {
 
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
-    assert_eq!(manifest.package().name(), "example");
-    assert!(manifest.package().version().inherited());
+    let package = manifest.package().unwrap();
+    assert_eq!(package.name(), "example");
+    assert!(package.version().inherited());
     assert_eq!(
-        manifest.package().edition().unwrap().uninherited().unwrap(),
+        package.edition().unwrap().uninherited().unwrap(),
         &RustEdition::E2021,
     );
-    assert_eq!(manifest.package().resolver().unwrap(), ResolverVersion::V2);
-    let authors = manifest.package().authors().unwrap();
+    assert_eq!(package.resolver().unwrap(), ResolverVersion::V2);
+    let authors = package.authors().unwrap();
     let authors = authors.uninherited().unwrap();
     let alice = &authors[0];
     assert_eq!(alice.name(), "Alice Great");

@@ -99,10 +99,11 @@ fn zbus_serde() {
 
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
-    assert_eq!(manifest.package().name(), "zbus");
-    assert_eq!(manifest.package().version(), &"5.1.1".into());
+    let package = manifest.package().unwrap();
+    assert_eq!(package.name(), "zbus");
+    assert_eq!(package.version(), &"5.1.1".into());
     assert_eq!(
-        manifest.package().edition().unwrap().uninherited().unwrap(),
+        package.edition().unwrap().uninherited().unwrap(),
         &RustEdition::E2021
     );
 

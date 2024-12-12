@@ -9,7 +9,7 @@ use super::{
 #[derive(Debug, Deserialize)]
 pub struct Manifest<'c> {
     #[serde(borrow)]
-    package: Package<'c>,
+    package: Option<Package<'c>>,
     dependencies: Option<Dependencies<'c>>,
     #[serde(rename = "dev-dependencies")]
     dev_dependencies: Option<DevDependencies<'c>>,
@@ -32,8 +32,8 @@ pub struct Manifest<'c> {
 
 impl<'c> Manifest<'c> {
     /// The package name.
-    pub fn package(&self) -> &Package<'c> {
-        &self.package
+    pub fn package(&self) -> Option<&Package<'c>> {
+        self.package.as_ref()
     }
 
     /// The dependencies.
