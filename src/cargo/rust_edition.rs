@@ -1,16 +1,21 @@
 use crate::Value;
+use serde::Deserialize;
 
 /// The Rust edition.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Deserialize, Copy, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum RustEdition {
     /// Edition 2015.
+    #[serde(rename = "2015")]
     E2015,
     /// Edition 2018.
+    #[serde(rename = "2018")]
     E2018,
     /// Edition 2021.
+    #[serde(rename = "2021")]
     E2021,
     /// Edition 2024.
+    #[serde(rename = "2024")]
     E2024,
 }
 
