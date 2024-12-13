@@ -15,7 +15,8 @@ fn zbus() {
 
     // Serde
     let serde = dependencies.get("serde").unwrap().as_table().unwrap();
-    assert_eq!(serde.get("version").unwrap().as_str().unwrap(), "1.0.200");
+    assert!(serde.get("version").is_none());
+    assert!(serde.get("workspace").unwrap().as_bool().unwrap());
     assert_eq!(
         serde.get("features").unwrap(),
         &["derive"].into_iter().collect::<Value>()
@@ -95,7 +96,7 @@ fn zbus() {
 #[cfg(feature = "cargo-toml")]
 #[test]
 fn zbus_serde() {
-    use tomling::cargo::{Dependency, LibraryType, Manifest, RustEdition};
+    use tomling::cargo::{LibraryType, Manifest, RustEdition};
 
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
@@ -107,18 +108,13 @@ fn zbus_serde() {
         &RustEdition::E2021
     );
 
-    let serde = match manifest.dependencies().unwrap().by_name("serde").unwrap() {
-        Dependency::Full(serde) => serde,
-        _ => panic!(),
-    };
-    assert_eq!(serde.version(), "1.0.200");
+    let serde = manifest.dependencies().unwrap().by_name("serde").unwrap();
+    assert!(serde.version().is_none());
+    assert_eq!(serde.workspace(), Some(true));
     assert_eq!(serde.features(), Some(&["derive"][..]));
 
-    let tokio = match manifest.dependencies().unwrap().by_name("tokio").unwrap() {
-        Dependency::Full(tokio) => tokio,
-        _ => panic!(),
-    };
-    assert_eq!(tokio.version(), "1.37.0");
+    let tokio = manifest.dependencies().unwrap().by_name("tokio").unwrap();
+    assert_eq!(tokio.version().unwrap(), "1.37.0");
     assert!(tokio.optional().unwrap());
     assert_eq!(
         tokio.features(),
@@ -194,7 +190,7 @@ const CARGO_TOML: &str = r#"
         "enumflags2",
     ] }
     zbus_names = { path = "../zbus_names", version = "4.0" }
-    serde = { version = "1.0.200", features = ["derive"] }
+    serde = { workspace = true, features = ["derive"] }
     serde_repr = "0.1.19"
     enumflags2 = { version = "0.7.9", features = ["serde"] }
     futures-core = "0.3.30"

@@ -1,5 +1,9 @@
+use std::borrow::Cow;
+
 use alloc::{collections::BTreeMap, vec::Vec};
-use serde::Deserialize;
+use serde::{de, Deserialize};
+
+use crate::Value;
 
 /// The dependencies.
 #[derive(Debug, Clone, Deserialize)]
@@ -18,27 +22,17 @@ impl<'d> Dependencies<'d> {
 }
 
 /// A dependency.
-#[derive(Debug, Clone, Deserialize, PartialEq)]
-#[serde(untagged)]
-pub enum Dependency<'d> {
-    /// A dependency defined only by required version.
-    VersionOnly(&'d str),
-    /// A full dependency definition.
-    Full(FullDependency<'d>),
-}
-
-/// A full dependency definition.
-#[derive(Debug, Clone, Deserialize, PartialEq)]
-pub struct FullDependency<'f> {
-    version: &'f str,
+#[derive(Debug, Clone, PartialEq)]
+pub struct Dependency<'d> {
+    version: Option<&'d str>,
     optional: Option<bool>,
-    features: Option<Vec<&'f str>>,
+    features: Option<Vec<&'d str>>,
     workspace: Option<bool>,
 }
 
-impl FullDependency<'_> {
+impl Dependency<'_> {
     /// The version of the dependency.
-    pub fn version(&self) -> &str {
+    pub fn version(&self) -> Option<&str> {
         self.version
     }
 
@@ -55,5 +49,65 @@ impl FullDependency<'_> {
     /// Inherit from the workspace.
     pub fn workspace(&self) -> Option<bool> {
         self.workspace
+    }
+}
+
+impl<'d, 'de: 'd> Deserialize<'de> for Dependency<'d> {
+    fn deserialize<D>(deserializer: D) -> Result<Dependency<'d>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = Value::deserialize(deserializer)?;
+        match value {
+            Value::String(Cow::Owned(_)) => Err(de::Error::invalid_type(
+                de::Unexpected::Other("not a borrowed string"),
+                &"a borrowed string",
+            )),
+            Value::String(Cow::Borrowed(version)) => Ok(Dependency {
+                version: Some(version),
+                optional: None,
+                features: None,
+                workspace: None,
+            }),
+            Value::Table(table) => {
+                let version = table
+                    .get("version")
+                    .map(|v| match v {
+                        Value::String(Cow::Borrowed(s)) => Ok(s),
+                        _ => Err(de::Error::invalid_type(
+                            de::Unexpected::Other("not a borrowed string"),
+                            &"a borrowed string",
+                        )),
+                    })
+                    .transpose()?
+                    .cloned();
+                let optional = table.get("optional").and_then(|v| v.as_bool());
+                let features = table
+                    .get("features")
+                    .map(|v| match v {
+                        Value::Array(a) => a
+                            .clone()
+                            .into_iter()
+                            .map(|v| v.try_into().map_err(de::Error::custom))
+                            .collect(),
+                        _ => Err(de::Error::invalid_type(
+                            de::Unexpected::Other("not an array"),
+                            &"an array",
+                        )),
+                    })
+                    .transpose()?;
+                let workspace = table.get("workspace").map(|v| v.as_bool().unwrap_or(false));
+                Ok(Dependency {
+                    version,
+                    optional,
+                    features,
+                    workspace,
+                })
+            }
+            _ => Err(de::Error::invalid_type(
+                de::Unexpected::Other("not a string or table"),
+                &"a string or table",
+            )),
+        }
     }
 }

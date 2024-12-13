@@ -81,7 +81,7 @@ fn simple_cargo_toml() {
 #[cfg(feature = "cargo-toml")]
 #[test]
 fn simple_cargo_toml_serde() {
-    use tomling::cargo::{BuildDependency, Dependency, Manifest, ResolverVersion, RustEdition};
+    use tomling::cargo::{Manifest, ResolverVersion, RustEdition};
 
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
@@ -102,20 +102,14 @@ fn simple_cargo_toml_serde() {
     assert_eq!(bob.name(), "Bob Less");
     assert_eq!(bob.email(), None);
 
-    let serde = match manifest.dependencies().unwrap().by_name("serde").unwrap() {
-        Dependency::Full(serde) => serde,
-        _ => panic!(),
-    };
-    assert_eq!(serde.version(), "1.0");
+    let serde = manifest.dependencies().unwrap().by_name("serde").unwrap();
+    assert_eq!(serde.version().unwrap(), "1.0");
     assert_eq!(serde.features(), Some(&["std", "derive"][..]));
 
-    let regex = match manifest.dependencies().unwrap().by_name("regex").unwrap() {
-        Dependency::VersionOnly(regex) => *regex,
-        _ => panic!(),
-    };
-    assert_eq!(regex, "1.5");
+    let regex = manifest.dependencies().unwrap().by_name("regex").unwrap();
+    assert_eq!(regex.version().unwrap(), "1.5");
 
-    let cc = match manifest
+    let cc = manifest
         .targets()
         .unwrap()
         .by_name("cfg(unix)")
@@ -123,12 +117,8 @@ fn simple_cargo_toml_serde() {
         .build_dependencies()
         .unwrap()
         .by_name("cc")
-        .unwrap()
-    {
-        BuildDependency::VersionOnly(cc) => *cc,
-        _ => panic!(),
-    };
-    assert_eq!(cc, "1.0.3");
+        .unwrap();
+    assert_eq!(cc.version().unwrap(), "1.0.3");
 
     let default = manifest.features().unwrap().by_name("default").unwrap();
     assert_eq!(default, &["serde"]);

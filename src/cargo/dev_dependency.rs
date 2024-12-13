@@ -1,5 +1,9 @@
+use std::borrow::Cow;
+
 use alloc::{collections::BTreeMap, vec::Vec};
-use serde::Deserialize;
+use serde::{de, Deserialize};
+
+use crate::Value;
 
 /// The dev dependencies.
 #[derive(Debug, Clone, Deserialize)]
@@ -18,30 +22,20 @@ impl<'d> DevDependencies<'d> {
 }
 
 /// A dev dependency.
-#[derive(Debug, Clone, Deserialize, PartialEq)]
-#[serde(untagged)]
-pub enum DevDependency<'d> {
-    /// A dependency defined only by required version.
-    VersionOnly(&'d str),
-    /// A full dependency definition.
-    Full(FullDevDependency<'d>),
-}
-
-/// A full dev dependency definition.
-#[derive(Debug, Clone, Deserialize, PartialEq)]
-pub struct FullDevDependency<'f> {
-    version: &'f str,
-    features: Option<Vec<&'f str>>,
+#[derive(Debug, Clone, PartialEq)]
+pub struct DevDependency<'d> {
+    version: Option<&'d str>,
+    features: Option<Vec<&'d str>>,
     workspace: Option<bool>,
 }
 
-impl FullDevDependency<'_> {
-    /// The version of the dev dependency.
-    pub fn version(&self) -> &str {
+impl DevDependency<'_> {
+    /// The version of the dependency.
+    pub fn version(&self) -> Option<&str> {
         self.version
     }
 
-    /// The features of the dev dependency.
+    /// The features of the dependency.
     pub fn features(&self) -> Option<&[&str]> {
         self.features.as_deref()
     }
@@ -52,11 +46,66 @@ impl FullDevDependency<'_> {
     }
 }
 
+impl<'d, 'de: 'd> Deserialize<'de> for DevDependency<'d> {
+    fn deserialize<D>(deserializer: D) -> Result<DevDependency<'d>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = Value::deserialize(deserializer)?;
+        match value {
+            Value::String(Cow::Owned(_)) => Err(de::Error::invalid_type(
+                de::Unexpected::Other("not a borrowed string"),
+                &"a borrowed string",
+            )),
+            Value::String(Cow::Borrowed(version)) => Ok(DevDependency {
+                version: Some(version),
+                features: None,
+                workspace: None,
+            }),
+            Value::Table(table) => {
+                let version = table
+                    .get("version")
+                    .map(|v| match v {
+                        Value::String(Cow::Borrowed(s)) => Ok(s),
+                        _ => Err(de::Error::invalid_type(
+                            de::Unexpected::Other("not a borrowed string"),
+                            &"a borrowed string",
+                        )),
+                    })
+                    .transpose()?
+                    .cloned();
+                let features = table
+                    .get("features")
+                    .map(|v| match v {
+                        Value::Array(a) => a
+                            .clone()
+                            .into_iter()
+                            .map(|v| v.try_into().map_err(de::Error::custom))
+                            .collect(),
+                        _ => Err(de::Error::invalid_type(
+                            de::Unexpected::Other("not an array"),
+                            &"an array",
+                        )),
+                    })
+                    .transpose()?;
+                let workspace = table.get("workspace").map(|v| v.as_bool().unwrap_or(false));
+                Ok(DevDependency {
+                    version,
+                    features,
+                    workspace,
+                })
+            }
+            _ => Err(de::Error::invalid_type(
+                de::Unexpected::Other("not a string or table"),
+                &"a string or table",
+            )),
+        }
+    }
+}
+
 /// Build dependencies.
 ///
 /// They have the same symantics as dev dependencies and hence they are type aliases.
 pub type BuildDependencies<'d> = DevDependencies<'d>;
 /// A build dependency.
 pub type BuildDependency<'d> = DevDependency<'d>;
-/// A full build dependency definition.
-pub type FullBuildDependency<'f> = FullDevDependency<'f>;
