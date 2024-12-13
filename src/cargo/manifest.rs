@@ -3,6 +3,7 @@ use serde::Deserialize;
 
 use super::{
     Bench, Binary, Dependencies, DevDependencies, Features, Library, Package, Targets, Test,
+    Workspace,
 };
 
 /// A parsed `Cargo.toml` file.
@@ -10,6 +11,7 @@ use super::{
 pub struct Manifest<'c> {
     #[serde(borrow)]
     package: Option<Package<'c>>,
+    workspace: Option<Workspace<'c>>,
     dependencies: Option<Dependencies<'c>>,
     #[serde(rename = "dev-dependencies")]
     dev_dependencies: Option<DevDependencies<'c>>,
@@ -34,6 +36,11 @@ impl<'c> Manifest<'c> {
     /// The package name.
     pub fn package(&self) -> Option<&Package<'c>> {
         self.package.as_ref()
+    }
+
+    /// The workspace.
+    pub fn workspace(&self) -> Option<&Workspace<'c>> {
+        self.workspace.as_ref()
     }
 
     /// The dependencies.
