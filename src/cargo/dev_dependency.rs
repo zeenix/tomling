@@ -27,6 +27,7 @@ pub struct DevDependency<'d> {
     version: Option<&'d str>,
     features: Option<Vec<&'d str>>,
     workspace: Option<bool>,
+    package: Option<&'d str>,
 }
 
 impl DevDependency<'_> {
@@ -43,6 +44,11 @@ impl DevDependency<'_> {
     /// Inherit from the workspace.
     pub fn workspace(&self) -> Option<bool> {
         self.workspace
+    }
+
+    /// The package name.
+    pub fn package(&self) -> Option<&str> {
+        self.package
     }
 }
 
@@ -61,6 +67,7 @@ impl<'d, 'de: 'd> Deserialize<'de> for DevDependency<'d> {
                 version: Some(version),
                 features: None,
                 workspace: None,
+                package: None,
             }),
             Value::Table(table) => {
                 let version = table
@@ -89,10 +96,22 @@ impl<'d, 'de: 'd> Deserialize<'de> for DevDependency<'d> {
                     })
                     .transpose()?;
                 let workspace = table.get("workspace").map(|v| v.as_bool().unwrap_or(false));
+                let package = table
+                    .get("package")
+                    .map(|v| match v {
+                        Value::String(Cow::Borrowed(s)) => Ok(s),
+                        _ => Err(de::Error::invalid_type(
+                            de::Unexpected::Other("not a borrowed string"),
+                            &"a borrowed string",
+                        )),
+                    })
+                    .transpose()?
+                    .cloned();
                 Ok(DevDependency {
                     version,
                     features,
                     workspace,
+                    package,
                 })
             }
             _ => Err(de::Error::invalid_type(

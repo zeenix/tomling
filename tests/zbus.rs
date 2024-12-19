@@ -127,6 +127,7 @@ fn zbus_serde() {
     assert!(serde.version().is_none());
     assert_eq!(serde.workspace(), Some(true));
     assert_eq!(serde.features(), Some(&["derive"][..]));
+    assert_eq!(serde.package(), Some("serde"));
 
     let tokio = manifest.dependencies().unwrap().by_name("tokio").unwrap();
     assert_eq!(tokio.version().unwrap(), "1.37.0");
@@ -241,7 +242,7 @@ const CARGO_TOML: &str = r#"
         "enumflags2",
     ] }
     zbus_names = { path = "../zbus_names", version = "4.0" }
-    serde = { workspace = true, features = ["derive"] }
+    serde = { workspace = true, features = ["derive"], package = "serde" }
     serde_repr = "0.1.19"
     enumflags2 = { version = "0.7.9", features = ["serde"] }
     futures-core = "0.3.30"
