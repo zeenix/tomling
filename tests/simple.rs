@@ -38,6 +38,21 @@ fn simple_cargo_toml() {
                 .collect::<Value>(),
             ),
             ("regex", "1.5".into()),
+            (
+                "dep-from-git",
+                [
+                    ("git", "https://github.com/zeenix/dep-from-git"),
+                    ("branch", "main"),
+                ]
+                .into_iter()
+                .collect::<Value>(),
+            ),
+            (
+                "dep-from-path",
+                [("path", "../dep-from-path")]
+                    .into_iter()
+                    .collect::<Value>(),
+            ),
         ]
         .into_iter()
         .collect(),
@@ -108,6 +123,17 @@ fn simple_cargo_toml_serde() {
 
     let regex = manifest.dependencies().unwrap().by_name("regex").unwrap();
     assert_eq!(regex.version().unwrap(), "1.5");
+    let dep_from_git = manifest
+        .dependencies()
+        .unwrap()
+        .by_name("dep-from-git")
+        .unwrap();
+    let git = dep_from_git.source().unwrap().git().unwrap();
+    assert_eq!(git.repository(), "https://github.com/zeenix/dep-from-git");
+    let commit = git.commit().unwrap();
+    assert_eq!(commit.branch().unwrap(), "main");
+    assert!(commit.revision().is_none());
+    assert!(commit.tag().is_none());
 
     let cc = manifest
         .targets()
@@ -147,6 +173,8 @@ serde = { version = "1.0", features = [
     "derive", # and here.
 ] }
 regex = "1.5" # This is also a comment.
+dep-from-git = { git = "https://github.com/zeenix/dep-from-git", branch = "main" }
+dep-from-path = { path = "../dep-from-path" }
 
 [target.'cfg(unix)'.build-dependencies]
 cc = "1.0.3"

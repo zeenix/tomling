@@ -5,7 +5,7 @@
 mod author;
 mod bench;
 mod binary;
-mod dependency;
+pub mod dependency;
 mod example;
 mod features;
 mod library;
@@ -20,7 +20,7 @@ pub mod workspace;
 pub use author::*;
 pub use bench::*;
 pub use binary::*;
-pub use dependency::*;
+pub use dependency::{Dependencies, Dependency};
 pub use example::*;
 pub use features::*;
 pub use library::*;
