@@ -38,6 +38,8 @@ impl Dependency<'_> {
     }
 
     /// Whether the dependency is optional.
+    ///
+    /// N/A if the it's a dev dependency.
     pub fn optional(&self) -> Option<bool> {
         self.optional
     }

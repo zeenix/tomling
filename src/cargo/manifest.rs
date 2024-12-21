@@ -1,10 +1,7 @@
 use alloc::vec::Vec;
 use serde::Deserialize;
 
-use super::{
-    Bench, Binary, Dependencies, DevDependencies, Features, Library, Package, Targets, Test,
-    Workspace,
-};
+use super::{Bench, Binary, Dependencies, Features, Library, Package, Targets, Test, Workspace};
 
 /// A parsed `Cargo.toml` file.
 #[derive(Debug, Deserialize)]
@@ -14,9 +11,9 @@ pub struct Manifest<'c> {
     workspace: Option<Workspace<'c>>,
     dependencies: Option<Dependencies<'c>>,
     #[serde(rename = "dev-dependencies")]
-    dev_dependencies: Option<DevDependencies<'c>>,
+    dev_dependencies: Option<Dependencies<'c>>,
     #[serde(rename = "build-dependencies")]
-    build_dependencies: Option<DevDependencies<'c>>,
+    build_dependencies: Option<Dependencies<'c>>,
     #[serde(rename = "target")]
     targets: Option<Targets<'c>>,
     features: Option<Features<'c>>,
@@ -49,12 +46,12 @@ impl<'c> Manifest<'c> {
     }
 
     /// The dev dependencies.
-    pub fn dev_dependencies(&self) -> Option<&DevDependencies<'c>> {
+    pub fn dev_dependencies(&self) -> Option<&Dependencies<'c>> {
         self.dev_dependencies.as_ref()
     }
 
     /// The build dependencies.
-    pub fn build_dependencies(&self) -> Option<&DevDependencies<'c>> {
+    pub fn build_dependencies(&self) -> Option<&Dependencies<'c>> {
         self.build_dependencies.as_ref()
     }
 
