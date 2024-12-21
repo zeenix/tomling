@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use alloc::{collections::BTreeMap, vec::Vec};
 use serde::{de, Deserialize};
 
-use crate::Value;
+use crate::{Table, Value};
 
 /// The dependencies.
 #[derive(Debug, Clone, Deserialize)]
@@ -79,17 +79,7 @@ impl<'d, 'de: 'd> Deserialize<'de> for Dependency<'d> {
                 package: None,
             }),
             Value::Table(table) => {
-                let version = table
-                    .get("version")
-                    .map(|v| match v {
-                        Value::String(Cow::Borrowed(s)) => Ok(s),
-                        _ => Err(de::Error::invalid_type(
-                            de::Unexpected::Other("not a borrowed string"),
-                            &"a borrowed string",
-                        )),
-                    })
-                    .transpose()?
-                    .cloned();
+                let version = get_string(&table, "version")?;
                 let optional = table.get("optional").and_then(|v| v.as_bool());
                 let features = table
                     .get("features")
@@ -106,17 +96,8 @@ impl<'d, 'de: 'd> Deserialize<'de> for Dependency<'d> {
                     })
                     .transpose()?;
                 let workspace = table.get("workspace").map(|v| v.as_bool().unwrap_or(false));
-                let package = table
-                    .get("package")
-                    .map(|v| match v {
-                        Value::String(Cow::Borrowed(s)) => Ok(s),
-                        _ => Err(de::Error::invalid_type(
-                            de::Unexpected::Other("not a borrowed string"),
-                            &"a borrowed string",
-                        )),
-                    })
-                    .transpose()?
-                    .cloned();
+                let package = get_string(&table, "package")?;
+
                 Ok(Dependency {
                     version,
                     optional,
@@ -131,4 +112,21 @@ impl<'d, 'de: 'd> Deserialize<'de> for Dependency<'d> {
             )),
         }
     }
+}
+
+fn get_string<'t, E>(table: &Table<'t>, key: &str) -> Result<Option<&'t str>, E>
+where
+    E: de::Error,
+{
+    table
+        .get(key)
+        .map(|v| match v {
+            Value::String(Cow::Borrowed(s)) => Ok(s),
+            _ => Err(de::Error::invalid_type(
+                de::Unexpected::Other("not a borrowed string"),
+                &"a borrowed string",
+            )),
+        })
+        .transpose()
+        .map(|s| s.cloned())
 }
