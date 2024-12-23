@@ -16,9 +16,9 @@
 
 <h1 align="center">tomling</h1>
 
-`tomling` is a simple TOML parser API, that is designed to have minimal dependencies and is `no_std`
-compatible. The main target is Cargo manifests (`Cargo.toml` files) and hence why specific
-API is provided for that purpose as well.
+`tomling` is a TOML parser API, that is designed to have minimal dependencies and is `no_std`
+compatible. The main target is Cargo manifests (`Cargo.toml` files) and hence why specific API is
+provided for that purpose as well.
 
 ## Usage
 
