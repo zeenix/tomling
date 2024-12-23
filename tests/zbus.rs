@@ -120,7 +120,7 @@ fn zbus_serde() {
 
     let package = manifest.package().unwrap();
     assert_eq!(package.name(), "zbus");
-    assert_eq!(package.version(), &"5.1.1".into());
+    assert_eq!(package.version().unwrap(), &"5.1.1".into());
     assert!(package.edition().unwrap().inherited());
 
     let serde = manifest.dependencies().unwrap().by_name("serde").unwrap();

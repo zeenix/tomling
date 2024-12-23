@@ -87,7 +87,7 @@ fn simple_cargo_toml_serde() {
 
     let package = manifest.package().unwrap();
     assert_eq!(package.name(), "example");
-    assert!(package.version().inherited());
+    assert!(package.version().unwrap().inherited());
     assert_eq!(
         package.edition().unwrap().uninherited().unwrap(),
         &RustEdition::E2021,

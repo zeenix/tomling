@@ -36,7 +36,7 @@ let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
 let package = manifest.package().unwrap();
 assert_eq!(package.name(), "example");
-assert_eq!(package.version(), &"0.1.0".into());
+assert_eq!(package.version().unwrap(), &"0.1.0".into());
 assert_eq!(package.edition().unwrap().uninherited().unwrap(), &RustEdition::E2021);
 assert_eq!(package.resolver().unwrap(), ResolverVersion::V2);
 let authors = package.authors().unwrap();

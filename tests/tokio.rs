@@ -70,7 +70,7 @@ fn tokio_serde() {
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
     let package = manifest.package().unwrap();
     assert_eq!(package.name(), "tokio");
-    assert_eq!(package.version(), &"1.41.1".into());
+    assert_eq!(package.version().unwrap(), &"1.41.1".into());
     assert_eq!(
         package.edition().unwrap().uninherited().unwrap(),
         &RustEdition::E2021
