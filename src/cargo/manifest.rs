@@ -1,20 +1,19 @@
 use alloc::vec::Vec;
 use serde::Deserialize;
 
-use super::{
-    Bench, Binary, Dependencies, DevDependencies, Features, Library, Package, Targets, Test,
-};
+use super::{Bench, Binary, Dependencies, Features, Library, Package, Targets, Test, Workspace};
 
 /// A parsed `Cargo.toml` file.
 #[derive(Debug, Deserialize)]
 pub struct Manifest<'c> {
     #[serde(borrow)]
-    package: Package<'c>,
+    package: Option<Package<'c>>,
+    workspace: Option<Workspace<'c>>,
     dependencies: Option<Dependencies<'c>>,
     #[serde(rename = "dev-dependencies")]
-    dev_dependencies: Option<DevDependencies<'c>>,
+    dev_dependencies: Option<Dependencies<'c>>,
     #[serde(rename = "build-dependencies")]
-    build_dependencies: Option<DevDependencies<'c>>,
+    build_dependencies: Option<Dependencies<'c>>,
     #[serde(rename = "target")]
     targets: Option<Targets<'c>>,
     features: Option<Features<'c>>,
@@ -32,8 +31,13 @@ pub struct Manifest<'c> {
 
 impl<'c> Manifest<'c> {
     /// The package name.
-    pub fn package(&self) -> &Package<'c> {
-        &self.package
+    pub fn package(&self) -> Option<&Package<'c>> {
+        self.package.as_ref()
+    }
+
+    /// The workspace.
+    pub fn workspace(&self) -> Option<&Workspace<'c>> {
+        self.workspace.as_ref()
     }
 
     /// The dependencies.
@@ -42,12 +46,12 @@ impl<'c> Manifest<'c> {
     }
 
     /// The dev dependencies.
-    pub fn dev_dependencies(&self) -> Option<&DevDependencies<'c>> {
+    pub fn dev_dependencies(&self) -> Option<&Dependencies<'c>> {
         self.dev_dependencies.as_ref()
     }
 
     /// The build dependencies.
-    pub fn build_dependencies(&self) -> Option<&DevDependencies<'c>> {
+    pub fn build_dependencies(&self) -> Option<&Dependencies<'c>> {
         self.build_dependencies.as_ref()
     }
 

@@ -65,21 +65,22 @@ fn tokio() {
 #[cfg(feature = "cargo-toml")]
 #[test]
 fn tokio_serde() {
-    use tomling::cargo::{Dependency, DevDependency, Manifest, RustEdition};
+    use tomling::cargo::{Manifest, RustEdition};
 
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
-    assert_eq!(manifest.package().name(), "tokio");
-    assert_eq!(manifest.package().version(), "1.41.1");
-    assert_eq!(manifest.package().edition().unwrap(), RustEdition::E2021);
+    let package = manifest.package().unwrap();
+    assert_eq!(package.name(), "tokio");
+    assert_eq!(package.version().unwrap(), &"1.41.1".into());
+    assert_eq!(
+        package.edition().unwrap().uninherited().unwrap(),
+        &RustEdition::E2021
+    );
 
-    let bytes = match manifest.dependencies().unwrap().by_name("bytes").unwrap() {
-        Dependency::Full(bytes) => bytes,
-        _ => panic!(),
-    };
-    assert_eq!(bytes.version(), "1.0.0");
+    let bytes = manifest.dependencies().unwrap().by_name("bytes").unwrap();
+    assert_eq!(bytes.version().unwrap(), "1.0.0");
     assert_eq!(bytes.optional(), Some(true));
 
-    let socket2 = match manifest
+    let socket2 = manifest
         .targets()
         .unwrap()
         .by_name("cfg(not(target_family = \"wasm\"))")
@@ -87,12 +88,8 @@ fn tokio_serde() {
         .dependencies()
         .unwrap()
         .by_name("socket2")
-        .unwrap()
-    {
-        Dependency::Full(s) => s,
-        _ => panic!(),
-    };
-    assert_eq!(socket2.version(), "0.5.5");
+        .unwrap();
+    assert_eq!(socket2.version().unwrap(), "0.5.5");
     assert_eq!(socket2.optional(), Some(true));
     assert_eq!(socket2.features(), Some(&["all"][..]));
 
@@ -101,11 +98,7 @@ fn tokio_serde() {
         .unwrap()
         .by_name("tokio-test")
         .unwrap();
-    let tokio_test = match tokio_test {
-        DevDependency::Full(t) => t,
-        _ => panic!(),
-    };
-    assert_eq!(tokio_test.version(), "0.4.0");
+    assert_eq!(tokio_test.version().unwrap(), "0.4.0");
     assert_eq!(tokio_test.features(), None);
 
     let windows_sys = manifest
@@ -117,11 +110,7 @@ fn tokio_serde() {
         .unwrap()
         .by_name("windows-sys")
         .unwrap();
-    let windows_sys = match windows_sys {
-        DevDependency::Full(w) => w,
-        _ => panic!(),
-    };
-    assert_eq!(windows_sys.version(), "0.52");
+    assert_eq!(windows_sys.version().unwrap(), "0.52");
     assert_eq!(
         windows_sys.features(),
         Some(&["Win32_Foundation", "Win32_Security_Authorization"][..])

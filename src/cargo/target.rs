@@ -1,7 +1,7 @@
 use alloc::collections::BTreeMap;
 use serde::Deserialize;
 
-use super::{Dependencies, DevDependencies};
+use super::Dependencies;
 
 /// The set of target-specific options.
 #[derive(Debug, Deserialize)]
@@ -25,9 +25,9 @@ pub struct Target<'t> {
     #[serde(borrow)]
     dependencies: Option<Dependencies<'t>>,
     #[serde(rename = "dev-dependencies")]
-    dev_dependencies: Option<DevDependencies<'t>>,
+    dev_dependencies: Option<Dependencies<'t>>,
     #[serde(rename = "build-dependencies")]
-    build_dependencies: Option<DevDependencies<'t>>,
+    build_dependencies: Option<Dependencies<'t>>,
 }
 
 impl<'t> Target<'t> {
@@ -37,12 +37,12 @@ impl<'t> Target<'t> {
     }
 
     /// The dev dependencies.
-    pub fn dev_dependencies(&self) -> Option<&DevDependencies<'t>> {
+    pub fn dev_dependencies(&self) -> Option<&Dependencies<'t>> {
         self.dev_dependencies.as_ref()
     }
 
     /// The build dependencies.
-    pub fn build_dependencies(&self) -> Option<&DevDependencies<'t>> {
+    pub fn build_dependencies(&self) -> Option<&Dependencies<'t>> {
         self.build_dependencies.as_ref()
     }
 }

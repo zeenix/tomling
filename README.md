@@ -24,7 +24,7 @@ API is provided for that purpose as well.
 
 ```rust
 use tomling::{
-    cargo::{BuildDependency, Dependency, Manifest, ResolverVersion, RustEdition},
+    cargo::{Manifest, ResolverVersion, RustEdition},
     Value, parse,
 };
 
@@ -34,11 +34,13 @@ use tomling::{
 
 let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
-assert_eq!(manifest.package().name(), "example");
-assert_eq!(manifest.package().version(), "0.1.0");
-assert_eq!(manifest.package().edition().unwrap(), RustEdition::E2021);
-assert_eq!(manifest.package().resolver().unwrap(), ResolverVersion::V2);
-let authors = manifest.package().authors().unwrap();
+let package = manifest.package().unwrap();
+assert_eq!(package.name(), "example");
+assert_eq!(package.version().unwrap(), &"0.1.0".into());
+assert_eq!(package.edition().unwrap().uninherited().unwrap(), &RustEdition::E2021);
+assert_eq!(package.resolver().unwrap(), ResolverVersion::V2);
+let authors = package.authors().unwrap();
+let authors = authors.uninherited().unwrap();
 let alice = &authors[0];
 assert_eq!(alice.name(), "Alice Great");
 assert_eq!(alice.email(), Some("foo@bar.com"));
@@ -46,20 +48,14 @@ let bob = &authors[1];
 assert_eq!(bob.name(), "Bob Less");
 assert_eq!(bob.email(), None);
 
-let serde = match manifest.dependencies().unwrap().by_name("serde").unwrap() {
-    Dependency::Full(serde) => serde,
-    _ => panic!(),
-};
-assert_eq!(serde.version(), "1.0");
+let serde = manifest.dependencies().unwrap().by_name("serde").unwrap();
+assert_eq!(serde.version(), Some("1.0"));
 assert_eq!(serde.features(), Some(&["std", "derive"][..]));
 
-let regex = match manifest.dependencies().unwrap().by_name("regex").unwrap() {
-    Dependency::VersionOnly(regex) => *regex,
-    _ => panic!(),
-};
-assert_eq!(regex, "1.5");
+let regex = manifest.dependencies().unwrap().by_name("regex").unwrap();
+assert_eq!(regex.version(), Some("1.5"));
 
-let cc = match manifest
+let cc = manifest
     .targets()
     .unwrap()
     .by_name("cfg(unix)")
@@ -67,12 +63,8 @@ let cc = match manifest
     .build_dependencies()
     .unwrap()
     .by_name("cc")
-    .unwrap()
-{
-    BuildDependency::VersionOnly(cc) => *cc,
-    _ => panic!(),
-};
-assert_eq!(cc, "1.0.3");
+    .unwrap();
+assert_eq!(cc.version(), Some("1.0.3"));
 
 let default = manifest.features().unwrap().by_name("default").unwrap();
 assert_eq!(default, &["serde"]);

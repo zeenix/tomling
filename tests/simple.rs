@@ -7,7 +7,12 @@ fn simple_cargo_toml() {
         "package".into(),
         [
             ("name", "example".into()),
-            ("version", "0.1.0".into()),
+            (
+                "version",
+                [("workspace", Value::from(true))]
+                    .into_iter()
+                    .collect::<Value>(),
+            ),
             ("edition", "2021".into()),
             ("resolver", "2".into()),
             (
@@ -33,6 +38,21 @@ fn simple_cargo_toml() {
                 .collect::<Value>(),
             ),
             ("regex", "1.5".into()),
+            (
+                "dep-from-git",
+                [
+                    ("git", "https://github.com/zeenix/dep-from-git"),
+                    ("branch", "main"),
+                ]
+                .into_iter()
+                .collect::<Value>(),
+            ),
+            (
+                "dep-from-path",
+                [("path", "../dep-from-path")]
+                    .into_iter()
+                    .collect::<Value>(),
+            ),
         ]
         .into_iter()
         .collect(),
@@ -76,15 +96,20 @@ fn simple_cargo_toml() {
 #[cfg(feature = "cargo-toml")]
 #[test]
 fn simple_cargo_toml_serde() {
-    use tomling::cargo::{BuildDependency, Dependency, Manifest, ResolverVersion, RustEdition};
+    use tomling::cargo::{Manifest, ResolverVersion, RustEdition};
 
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
-    assert_eq!(manifest.package().name(), "example");
-    assert_eq!(manifest.package().version(), "0.1.0");
-    assert_eq!(manifest.package().edition().unwrap(), RustEdition::E2021);
-    assert_eq!(manifest.package().resolver().unwrap(), ResolverVersion::V2);
-    let authors = manifest.package().authors().unwrap();
+    let package = manifest.package().unwrap();
+    assert_eq!(package.name(), "example");
+    assert!(package.version().unwrap().inherited());
+    assert_eq!(
+        package.edition().unwrap().uninherited().unwrap(),
+        &RustEdition::E2021,
+    );
+    assert_eq!(package.resolver().unwrap(), ResolverVersion::V2);
+    let authors = package.authors().unwrap();
+    let authors = authors.uninherited().unwrap();
     let alice = &authors[0];
     assert_eq!(alice.name(), "Alice Great");
     assert_eq!(alice.email(), Some("foo@bar.com"));
@@ -92,20 +117,25 @@ fn simple_cargo_toml_serde() {
     assert_eq!(bob.name(), "Bob Less");
     assert_eq!(bob.email(), None);
 
-    let serde = match manifest.dependencies().unwrap().by_name("serde").unwrap() {
-        Dependency::Full(serde) => serde,
-        _ => panic!(),
-    };
-    assert_eq!(serde.version(), "1.0");
+    let serde = manifest.dependencies().unwrap().by_name("serde").unwrap();
+    assert_eq!(serde.version().unwrap(), "1.0");
     assert_eq!(serde.features(), Some(&["std", "derive"][..]));
 
-    let regex = match manifest.dependencies().unwrap().by_name("regex").unwrap() {
-        Dependency::VersionOnly(regex) => *regex,
-        _ => panic!(),
-    };
-    assert_eq!(regex, "1.5");
+    let regex = manifest.dependencies().unwrap().by_name("regex").unwrap();
+    assert_eq!(regex.version().unwrap(), "1.5");
+    let dep_from_git = manifest
+        .dependencies()
+        .unwrap()
+        .by_name("dep-from-git")
+        .unwrap();
+    let git = dep_from_git.source().unwrap().git().unwrap();
+    assert_eq!(git.repository(), "https://github.com/zeenix/dep-from-git");
+    let commit = git.commit().unwrap();
+    assert_eq!(commit.branch().unwrap(), "main");
+    assert!(commit.revision().is_none());
+    assert!(commit.tag().is_none());
 
-    let cc = match manifest
+    let cc = manifest
         .targets()
         .unwrap()
         .by_name("cfg(unix)")
@@ -113,12 +143,8 @@ fn simple_cargo_toml_serde() {
         .build_dependencies()
         .unwrap()
         .by_name("cc")
-        .unwrap()
-    {
-        BuildDependency::VersionOnly(cc) => *cc,
-        _ => panic!(),
-    };
-    assert_eq!(cc, "1.0.3");
+        .unwrap();
+    assert_eq!(cc.version().unwrap(), "1.0.3");
 
     let default = manifest.features().unwrap().by_name("default").unwrap();
     assert_eq!(default, &["serde"]);
@@ -131,7 +157,7 @@ fn simple_cargo_toml_serde() {
 const CARGO_TOML: &str = r#"
 [package]
 name = "example"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 authors = ["Alice Great <foo@bar.com>", "Bob Less"]
 resolver = "2"
@@ -147,6 +173,8 @@ serde = { version = "1.0", features = [
     "derive", # and here.
 ] }
 regex = "1.5" # This is also a comment.
+dep-from-git = { git = "https://github.com/zeenix/dep-from-git", branch = "main" }
+dep-from-path = { path = "../dep-from-path" }
 
 [target.'cfg(unix)'.build-dependencies]
 cc = "1.0.3"

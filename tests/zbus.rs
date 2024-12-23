@@ -4,18 +4,26 @@ fn zbus() {
 
     let parsed_map = parse(CARGO_TOML).unwrap();
 
-    // Too much to check for everything. Let's check some keys and values.
     let package = parsed_map.get("package").unwrap().as_table().unwrap();
     assert_eq!(package.get("name").unwrap().as_str().unwrap(), "zbus");
     assert_eq!(package.get("version").unwrap().as_str().unwrap(), "5.1.1");
-    assert_eq!(package.get("edition").unwrap().as_str().unwrap(), "2021");
+    assert!(package
+        .get("edition")
+        .unwrap()
+        .as_table()
+        .unwrap()
+        .get("workspace")
+        .unwrap()
+        .as_bool()
+        .unwrap());
 
     // Let's check the dependencies, especially the complicated ones.
     let dependencies = parsed_map.get("dependencies").unwrap().as_table().unwrap();
 
     // Serde
     let serde = dependencies.get("serde").unwrap().as_table().unwrap();
-    assert_eq!(serde.get("version").unwrap().as_str().unwrap(), "1.0.200");
+    assert!(serde.get("version").is_none());
+    assert!(serde.get("workspace").unwrap().as_bool().unwrap());
     assert_eq!(
         serde.get("features").unwrap(),
         &["derive"].into_iter().collect::<Value>()
@@ -90,31 +98,39 @@ fn zbus() {
             &["blocking-api"].into_iter().collect::<Value>()
         );
     }
+
+    // Now the workspace Cargo.toml.
+    let parsed_map = parse(WORKSPACE_CARGO_TOML).unwrap();
+    let workspace = parsed_map.get("workspace").unwrap().as_table().unwrap();
+
+    let package = workspace.get("package").unwrap().as_table().unwrap();
+    assert!(package.get("version").is_none());
+    assert_eq!(package.get("edition").unwrap().as_str().unwrap(), "2021");
 }
 
 #[cfg(feature = "cargo-toml")]
 #[test]
 fn zbus_serde() {
-    use tomling::cargo::{Dependency, LibraryType, Manifest, RustEdition};
+    use tomling::{
+        cargo::{LibraryType, Manifest, ResolverVersion, RustEdition},
+        Value,
+    };
 
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
-    assert_eq!(manifest.package().name(), "zbus");
-    assert_eq!(manifest.package().version(), "5.1.1");
-    assert_eq!(manifest.package().edition().unwrap(), RustEdition::E2021);
+    let package = manifest.package().unwrap();
+    assert_eq!(package.name(), "zbus");
+    assert_eq!(package.version().unwrap(), &"5.1.1".into());
+    assert!(package.edition().unwrap().inherited());
 
-    let serde = match manifest.dependencies().unwrap().by_name("serde").unwrap() {
-        Dependency::Full(serde) => serde,
-        _ => panic!(),
-    };
-    assert_eq!(serde.version(), "1.0.200");
+    let serde = manifest.dependencies().unwrap().by_name("serde").unwrap();
+    assert!(serde.version().is_none());
+    assert_eq!(serde.workspace(), Some(true));
     assert_eq!(serde.features(), Some(&["derive"][..]));
+    assert_eq!(serde.package(), Some("serde"));
 
-    let tokio = match manifest.dependencies().unwrap().by_name("tokio").unwrap() {
-        Dependency::Full(tokio) => tokio,
-        _ => panic!(),
-    };
-    assert_eq!(tokio.version(), "1.37.0");
+    let tokio = manifest.dependencies().unwrap().by_name("tokio").unwrap();
+    assert_eq!(tokio.version().unwrap(), "1.37.0");
     assert!(tokio.optional().unwrap());
     assert_eq!(
         tokio.features(),
@@ -133,22 +149,58 @@ fn zbus_serde() {
     let bench = manifest.benches().unwrap().first().unwrap();
     assert_eq!(bench.name(), "benchmarks");
     assert!(!bench.harness().unwrap());
+
+    // Now the workspace Cargo.toml.
+    let manifest: Manifest = tomling::from_str(WORKSPACE_CARGO_TOML).unwrap();
+    let workspace = manifest.workspace().unwrap();
+    assert_eq!(
+        workspace.members().unwrap(),
+        &[
+            "zbus",
+            "zvariant",
+            "zbus_names",
+            "zvariant_derive",
+            "zvariant_utils",
+            "zbus_macros",
+            "zbus_xml",
+            "zbus_xmlgen",
+        ]
+    );
+    assert_eq!(workspace.resolver().unwrap(), ResolverVersion::V2);
+    let unexpected_cfgs = match workspace.lints().unwrap().get("rust") {
+        Some(Value::Table(rust)) => match rust.get("unexpected_cfgs") {
+            Some(Value::Table(unexpected_cfgs)) => unexpected_cfgs,
+            _ => panic!(),
+        },
+        _ => panic!(),
+    };
+    let package = workspace.package().unwrap();
+    assert_eq!(package.edition().unwrap(), RustEdition::E2021);
+    assert_eq!(
+        unexpected_cfgs.get("level").unwrap().as_str().unwrap(),
+        "warn"
+    );
+    assert_eq!(
+        unexpected_cfgs.get("check-cfg").unwrap(),
+        &["cfg(tokio_unstable)"].into_iter().collect::<Value>()
+    );
+    // TODO: Check the `profile` section after we add API for that.
 }
 
 const CARGO_TOML: &str = r#"
     [package]
     name = "zbus"
     version = "5.1.1"
-    authors = ["Zeeshan Ali Khan <zeeshanak@gnome.org>"]
-    edition = "2021"
-    rust-version = "1.80"
+    authors.workspace = true
+    edition.workspace = true
+    rust-version.workspace = true
 
-    description = "API for D-Bus communication"
-    repository = "https://github.com/dbus2/zbus/"
-    keywords = ["D-Bus", "DBus", "IPC"]
-    license = "MIT"
-    categories = ["os::unix-apis"]
-    readme = "README.md"
+    description.workspace = true
+    repository.workspace = true
+    keywords.workspace = true
+    license.workspace = true
+    categories.workspace = true
+    readme.workspace = true
 
     [features]
     default = ["async-io", "blocking-api"]
@@ -190,7 +242,7 @@ const CARGO_TOML: &str = r#"
         "enumflags2",
     ] }
     zbus_names = { path = "../zbus_names", version = "4.0" }
-    serde = { version = "1.0.200", features = ["derive"] }
+    serde = { workspace = true, features = ["derive"], package = "serde" }
     serde_repr = "0.1.19"
     enumflags2 = { version = "0.7.9", features = ["serde"] }
     futures-core = "0.3.30"
@@ -308,4 +360,42 @@ const CARGO_TOML: &str = r#"
     name = "screen-brightness2"
     path = "examples/screen-brightness2.rs"
     required-features = ["blocking-api"]
+"#;
+
+const WORKSPACE_CARGO_TOML: &str = r#"
+[workspace]
+members = [
+    "zbus",
+    "zvariant",
+    "zbus_names",
+    "zvariant_derive",
+    "zvariant_utils",
+    "zbus_macros",
+    "zbus_xml",
+    "zbus_xmlgen",
+]
+resolver = "2"
+
+[workspace.package]
+authors = ["Zeeshan Ali Khan <zeeshanak@gnome.org>"]
+edition = "2021"
+rust-version = "1.80"
+
+description = "API for D-Bus communication"
+repository = "https://github.com/dbus2/zbus/"
+keywords = ["D-Bus", "DBus", "IPC"]
+license = "MIT"
+categories = ["os::unix-apis"]
+readme = "README.md"
+
+[workspace.dependencies]
+serde = { version = "1.0.200" }
+
+[workspace.lints.rust]
+# This optional cfg flag is used by tokio code to set task name
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tokio_unstable)'] }
+
+[profile.bench]
+debug = true
+strip = "none"
 "#;

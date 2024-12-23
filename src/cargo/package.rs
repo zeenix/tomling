@@ -1,34 +1,37 @@
+//! Cargo package information.
+
 use alloc::vec::Vec;
 use serde::Deserialize;
 
-use super::Author;
-use crate::Table;
+use super::{Author, ResolverVersion, RustEdition};
+use crate::{Table, Value};
 
 /// The package information.
 #[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct Package<'p> {
     name: &'p str,
-    version: &'p str,
-    edition: Option<RustEdition>,
+    #[serde(borrow)]
+    version: Option<WorkspaceInheritable<&'p str>>,
+    edition: Option<WorkspaceInheritable<RustEdition>>,
     #[serde(rename = "rust-version")]
-    rust_version: Option<&'p str>,
-    authors: Option<Vec<Author<'p>>>,
-    description: Option<&'p str>,
-    documentation: Option<&'p str>,
-    readme: Option<&'p str>,
-    homepage: Option<&'p str>,
-    repository: Option<&'p str>,
-    license: Option<&'p str>,
-    license_file: Option<&'p str>,
-    keywords: Option<Vec<&'p str>>,
-    categories: Option<Vec<&'p str>>,
+    rust_version: Option<WorkspaceInheritable<&'p str>>,
+    authors: Option<WorkspaceInheritable<Vec<Author<'p>>>>,
+    description: Option<WorkspaceInheritable<&'p str>>,
+    documentation: Option<WorkspaceInheritable<&'p str>>,
+    readme: Option<WorkspaceInheritable<&'p str>>,
+    homepage: Option<WorkspaceInheritable<&'p str>>,
+    repository: Option<WorkspaceInheritable<&'p str>>,
+    license: Option<WorkspaceInheritable<&'p str>>,
+    license_file: Option<WorkspaceInheritable<&'p str>>,
+    keywords: Option<WorkspaceInheritable<Vec<&'p str>>>,
+    categories: Option<WorkspaceInheritable<Vec<&'p str>>>,
     workspace: Option<&'p str>,
     build: Option<&'p str>,
     links: Option<&'p str>,
-    publish: Option<bool>,
+    publish: Option<WorkspaceInheritable<bool>>,
     metadata: Option<Table<'p>>,
-    include: Option<Vec<&'p str>>,
-    exclude: Option<Vec<&'p str>>,
+    include: Option<WorkspaceInheritable<Vec<&'p str>>>,
+    exclude: Option<WorkspaceInheritable<Vec<&'p str>>>,
     #[serde(rename = "default-run")]
     default_run: Option<&'p str>,
     autobins: Option<bool>,
@@ -45,68 +48,68 @@ impl<'p> Package<'p> {
     }
 
     /// The package version.
-    pub fn version(&self) -> &str {
-        self.version
+    pub fn version(&self) -> Option<&WorkspaceInheritable<&'p str>> {
+        self.version.as_ref()
     }
 
     /// The Rust edition.
-    pub fn edition(&self) -> Option<RustEdition> {
-        self.edition
+    pub fn edition(&self) -> Option<&WorkspaceInheritable<RustEdition>> {
+        self.edition.as_ref()
     }
 
     /// The required Rust version.
-    pub fn rust_version(&self) -> Option<&str> {
-        self.rust_version
+    pub fn rust_version(&self) -> Option<&WorkspaceInheritable<&'p str>> {
+        self.rust_version.as_ref()
     }
 
     /// The list of authors.
-    pub fn authors(&self) -> Option<&[Author<'p>]> {
-        self.authors.as_deref()
+    pub fn authors(&self) -> Option<WorkspaceInheritable<&[Author<'p>]>> {
+        self.authors.as_ref().map(WorkspaceInheritable::as_slice)
     }
 
     /// The package description.
-    pub fn description(&self) -> Option<&str> {
-        self.description
+    pub fn description(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.description.clone()
     }
 
     /// The package documentation URL.
-    pub fn documentation(&self) -> Option<&str> {
-        self.documentation
+    pub fn documentation(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.documentation.clone()
     }
 
     /// The path to the README file.
-    pub fn readme(&self) -> Option<&str> {
-        self.readme
+    pub fn readme(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.readme.clone()
     }
 
     /// The package homepage URL.
-    pub fn homepage(&self) -> Option<&str> {
-        self.homepage
+    pub fn homepage(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.homepage.clone()
     }
 
     /// The package repository URL.
-    pub fn repository(&self) -> Option<&str> {
-        self.repository
+    pub fn repository(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.repository.clone()
     }
 
     /// The package license.
-    pub fn license(&self) -> Option<&str> {
-        self.license
+    pub fn license(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.license.clone()
     }
 
     /// The path to the license file.
-    pub fn license_file(&self) -> Option<&str> {
-        self.license_file
+    pub fn license_file(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.license_file.clone()
     }
 
     /// The package keywords.
-    pub fn keywords(&self) -> Option<&[&str]> {
-        self.keywords.as_deref()
+    pub fn keywords(&self) -> Option<WorkspaceInheritable<&[&str]>> {
+        self.keywords.as_ref().map(WorkspaceInheritable::as_slice)
     }
 
     /// The package categories.
-    pub fn categories(&self) -> Option<&[&str]> {
-        self.categories.as_deref()
+    pub fn categories(&self) -> Option<WorkspaceInheritable<&[&str]>> {
+        self.categories.as_ref().map(WorkspaceInheritable::as_slice)
     }
 
     /// The workspace path.
@@ -125,8 +128,8 @@ impl<'p> Package<'p> {
     }
 
     /// Whether the package should be published.
-    pub fn publish(&self) -> Option<bool> {
-        self.publish
+    pub fn publish(&self) -> Option<WorkspaceInheritable<bool>> {
+        self.publish.clone()
     }
 
     /// The package metadata.
@@ -135,13 +138,13 @@ impl<'p> Package<'p> {
     }
 
     /// The paths to include.
-    pub fn include(&self) -> Option<&[&str]> {
-        self.include.as_deref()
+    pub fn include(&self) -> Option<WorkspaceInheritable<&[&str]>> {
+        self.include.as_ref().map(WorkspaceInheritable::as_slice)
     }
 
     /// The paths to exclude.
-    pub fn exclude(&self) -> Option<&[&str]> {
-        self.exclude.as_deref()
+    pub fn exclude(&self) -> Option<WorkspaceInheritable<&[&str]>> {
+        self.exclude.as_ref().map(WorkspaceInheritable::as_slice)
     }
 
     /// The default run command.
@@ -175,32 +178,66 @@ impl<'p> Package<'p> {
     }
 }
 
-/// The resolver version.
-#[derive(Debug, Deserialize, Copy, Clone, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum ResolverVersion {
-    /// Resolver version 1.
-    #[serde(rename = "1")]
-    V1,
-    /// Resolver version 2.
-    #[serde(rename = "2")]
-    V2,
+/// The property inheritable from the workspace.
+#[derive(Debug, Clone, PartialEq)]
+pub enum WorkspaceInheritable<W> {
+    /// The value.
+    Uninherited(W),
+    /// Inherit from the workspace.
+    Inherited,
 }
 
-/// The Rust edition.
-#[derive(Debug, Deserialize, Copy, Clone, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum RustEdition {
-    /// Edition 2015.
-    #[serde(rename = "2015")]
-    E2015,
-    /// Edition 2018.
-    #[serde(rename = "2018")]
-    E2018,
-    /// Edition 2021.
-    #[serde(rename = "2021")]
-    E2021,
-    /// Edition 2024.
-    #[serde(rename = "2024")]
-    E2024,
+impl<W> WorkspaceInheritable<W> {
+    /// Get the value if it is uninherited.
+    pub fn uninherited(&self) -> Option<&W> {
+        match self {
+            Self::Uninherited(value) => Some(value),
+            Self::Inherited => None,
+        }
+    }
+
+    /// If it is inherited from the workspace.
+    pub fn inherited(&self) -> bool {
+        matches!(self, Self::Inherited)
+    }
+}
+
+impl<T> WorkspaceInheritable<Vec<T>> {
+    /// Get the value as a slice if it is uninherited.
+    pub fn as_slice(&self) -> WorkspaceInheritable<&[T]> {
+        match self {
+            Self::Uninherited(value) => WorkspaceInheritable::Uninherited(value.as_slice()),
+            Self::Inherited => WorkspaceInheritable::Inherited,
+        }
+    }
+}
+
+impl<W> From<W> for WorkspaceInheritable<W> {
+    fn from(value: W) -> Self {
+        Self::Uninherited(value)
+    }
+}
+
+impl<'value, 'de: 'value, W> Deserialize<'de> for WorkspaceInheritable<W>
+where
+    W: TryFrom<Value<'value>, Error = crate::Error>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<WorkspaceInheritable<W>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        match <Value<'value>>::deserialize(deserializer)? {
+            Value::Table(table) => {
+                table
+                    .get("workspace")
+                    .and_then(|v| (v == &Value::Boolean(true)).then_some(()))
+                    .ok_or_else(|| serde::de::Error::missing_field("workspace"))?;
+                Ok(Self::Inherited)
+            }
+            value => value
+                .try_into()
+                .map(Self::Uninherited)
+                .map_err(serde::de::Error::custom),
+        }
+    }
 }
