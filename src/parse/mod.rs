@@ -16,6 +16,9 @@ use winnow::{
 
 /// Parse a TOML document.
 pub fn parse(input: &str) -> Result<Table<'_>, Error> {
+    if input.is_empty() {
+        return Ok(Table::new());
+    }
     let key_value = parse_key_value.map(|(keys, value)| (None, keys, value));
     let table_header = parse_table_header
         .map(|(header, is_array)| (Some((header, is_array)), Vec::new(), Table::new().into()));

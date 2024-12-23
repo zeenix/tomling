@@ -47,7 +47,6 @@ fn toml_test_harness() {
     harness.version("1.0.0");
     harness
         .ignore([
-            "valid/empty-file.toml",
             "valid/example.toml",
             "valid/spec-example-1-compact.toml",
             "valid/spec-example-1.toml",
