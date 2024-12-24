@@ -1,5 +1,5 @@
 use crate::{Array, Table};
-use alloc::borrow::Cow;
+use alloc::{borrow::Cow, string::String, vec::Vec};
 
 /// A TOML value.
 #[derive(Debug, Clone, PartialEq)]

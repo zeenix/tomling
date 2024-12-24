@@ -266,7 +266,7 @@ fn inf(input: &mut &str) -> PResult<f64> {
 const INF: &str = "inf";
 // nan = %x6e.61.6e  ; nan
 fn nan(input: &mut &str) -> PResult<f64> {
-    NAN.value(f64::NAN.copysign(1.0)).parse_next(input)
+    NAN.value(f64::NAN).parse_next(input)
 }
 const NAN: &str = "nan";
 

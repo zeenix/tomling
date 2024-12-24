@@ -12,9 +12,9 @@ impl Decoder for Tomling {
     }
 
     fn decode(&self, data: &[u8]) -> Result<Decoded, toml_test_harness::Error> {
-        fn inner(data: &[u8]) -> Result<Decoded, Box<dyn std::error::Error>> {
-            let s = std::str::from_utf8(data)?;
-            let table = parse(s)?;
+        fn inner(data: &[u8]) -> Result<Decoded, String> {
+            let s = std::str::from_utf8(data).map_err(|e| e.to_string())?;
+            let table = parse(s).map_err(|e| e.to_string())?;
             let table = map_table(&table);
             Ok(Decoded::Table(table))
         }

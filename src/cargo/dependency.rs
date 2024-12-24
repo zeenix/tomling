@@ -1,8 +1,6 @@
 //! The dependencies of a package.
 
-use std::borrow::Cow;
-
-use alloc::{collections::BTreeMap, vec::Vec};
+use alloc::{borrow::Cow, collections::BTreeMap, vec::Vec};
 use serde::{de, Deserialize};
 
 use crate::{Table, Value};
