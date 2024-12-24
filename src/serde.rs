@@ -36,6 +36,7 @@ impl<'de> Deserializer<'de> for &Value<'de> {
             Value::Boolean(b) => visitor.visit_bool(*b),
             Value::Array(arr) => visitor.visit_seq(SeqDeserializer::new(arr)),
             Value::Table(table) => visitor.visit_map(MapDeserializer::new(table)),
+            Value::Datetime(dt) => dt.deserialize(visitor),
         }
     }
 

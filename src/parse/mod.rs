@@ -1,3 +1,4 @@
+mod datetime;
 mod ignored;
 mod numbers;
 mod strings;
@@ -147,6 +148,11 @@ fn parse_float<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
 /// Parses a boolean value
 fn parse_boolean<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
     numbers::boolean(input).map(Into::into)
+}
+
+/// Parses a datatime value.
+fn parse_datetime<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+    datetime::date_time(input).map(Into::into)
 }
 
 /// Parses an array of values

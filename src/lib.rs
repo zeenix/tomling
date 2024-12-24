@@ -20,6 +20,8 @@ pub mod table;
 pub use table::Table;
 pub mod array;
 pub use array::Array;
+pub mod datetime;
+pub use datetime::{Date, Datetime, Time};
 mod parse;
 pub use parse::parse;
 #[cfg(feature = "serde")]
