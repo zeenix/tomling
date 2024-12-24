@@ -23,15 +23,13 @@ provided for that purpose as well.
 ## Usage
 
 ```rust
-use tomling::{
-    cargo::{Manifest, ResolverVersion, RustEdition},
-    Value, parse,
-};
-
 //
 // Using the `Cargo.toml` specific API:
 //
 
+# #[cfg(feature = "cargo-toml")]
+# {
+use tomling::cargo::{Manifest, ResolverVersion, RustEdition};
 let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
 
 let package = manifest.package().unwrap();
@@ -72,11 +70,12 @@ assert_eq!(default, &["serde"]);
 let binary = &manifest.binaries().unwrap()[0];
 assert_eq!(binary.name(), "some-binary");
 assert_eq!(binary.path(), Some("src/bin/my-binary.rs"));
+# }
 
 //
 // Using the generic raw `TOML` parsing API:
 //
-let manifest = parse(CARGO_TOML).unwrap();
+let manifest = tomling::parse(CARGO_TOML).unwrap();
 let package = manifest.get("package").unwrap().as_table().unwrap();
 assert_eq!(package.get("name").unwrap().as_str().unwrap(), "example");
 assert_eq!(package.get("version").unwrap().as_str().unwrap(), "0.1.0");
@@ -88,7 +87,7 @@ let serde = deps.get("serde").unwrap().as_table().unwrap();
 assert_eq!(serde.get("version").unwrap().as_str().unwrap(), "1.0");
 let serde_features =
     serde.get("features").unwrap().as_array().unwrap().as_slice();
-assert_eq!(serde_features, &[Value::from("std"), "derive".into()]);
+assert_eq!(serde_features, &[tomling::Value::from("std"), "derive".into()]);
 let regex = deps.get("regex").unwrap().as_str().unwrap();
 assert_eq!(regex, "1.5");
 
