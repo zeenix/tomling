@@ -1,4 +1,4 @@
-use crate::{Array, Table};
+use crate::{datetime, Array, Date, Datetime, Table, Time};
 use alloc::{borrow::Cow, string::String, vec::Vec};
 
 /// A TOML value.
@@ -20,6 +20,8 @@ pub enum Value<'a> {
     Array(Array<'a>),
     /// A table.
     Table(Table<'a>),
+    /// A date and time.
+    Datetime(Datetime),
 }
 
 impl<'a> Value<'a> {
@@ -70,6 +72,15 @@ impl<'a> Value<'a> {
             _ => None,
         }
     }
+
+    /// Returns the underlying [`Datetime`] if the `Value` is a date and time
+    /// value
+    pub fn as_datetime(&self) -> Option<Datetime> {
+        match self {
+            &Self::Datetime(dt) => Some(dt),
+            _ => None,
+        }
+    }
 }
 
 impl<'a, V> FromIterator<V> for Value<'a>
@@ -113,6 +124,10 @@ impl_from!(f64 => Float);
 impl_from!(bool => Boolean);
 impl_from!(Array<'a> => Array);
 impl_from!(Table<'a> => Table);
+impl_from!(Datetime => Datetime);
+impl_from!(Date => Datetime);
+impl_from!(Time => Datetime);
+impl_from!(datetime::Offset => Datetime);
 
 macro_rules! impl_try_from {
     ($variant:ident => $ty:ty) => {
@@ -138,6 +153,7 @@ impl_try_from!(Float => f64);
 impl_try_from!(Boolean => bool);
 impl_try_from!(Array => Array<'a>);
 impl_try_from!(Table => Table<'a>);
+impl_try_from!(Datetime => Datetime);
 
 impl<'a> TryFrom<Value<'a>> for &'a str {
     type Error = crate::Error;
@@ -178,6 +194,7 @@ impl_try_from_ref!(Float => f64);
 impl_try_from_ref!(Boolean => bool);
 impl_try_from_ref!(Array => Array<'b>);
 impl_try_from_ref!(Table => Table<'b>);
+impl_try_from_ref!(Datetime => Datetime);
 
 impl<'value, T> TryFrom<Value<'value>> for Vec<T>
 where

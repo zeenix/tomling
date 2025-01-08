@@ -95,10 +95,26 @@ impl<'i, 'a> Iterator for Iter<'i, 'a> {
 
 impl<'a> IntoIterator for Array<'a> {
     type Item = Value<'a>;
-    type IntoIter = alloc::vec::IntoIter<Value<'a>>;
+    type IntoIter = IntoIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
+        IntoIter {
+            iter: self.0.into_iter(),
+        }
+    }
+}
+
+/// An iterator over the values of an array that moves out of the `Array`.
+#[derive(Debug)]
+pub struct IntoIter<'a> {
+    iter: alloc::vec::IntoIter<Value<'a>>,
+}
+
+impl<'a> Iterator for IntoIter<'a> {
+    type Item = Value<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
     }
 }
 

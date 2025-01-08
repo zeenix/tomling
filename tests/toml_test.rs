@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use toml_test_harness::{Decoded, Decoder, DecoderHarness};
+use toml_test_harness::{Decoded, DecodedValue, Decoder, DecoderHarness};
 use tomling::{parse, Table, Value};
 
 #[derive(Clone, Copy)]
@@ -38,6 +38,19 @@ fn value_to_decoded(value: &Value<'_>) -> Decoded {
         &Value::Boolean(b) => Decoded::Value(b.into()),
         Value::Array(a) => Decoded::Array(a.iter().map(value_to_decoded).collect()),
         Value::Table(t) => Decoded::Table(map_table(t)),
+        Value::Datetime(dt) => Decoded::Value(map_date_time(dt)),
+    }
+}
+
+fn map_date_time(dt: &tomling::Datetime) -> DecodedValue {
+    let value = dt.to_string();
+
+    match (dt.date.is_some(), dt.time.is_some(), dt.offset.is_some()) {
+        (true, true, true) => DecodedValue::Datetime(value),
+        (true, true, false) => DecodedValue::DatetimeLocal(value),
+        (true, false, false) => DecodedValue::DateLocal(value),
+        (false, true, false) => DecodedValue::TimeLocal(value),
+        _ => unreachable!("Unsupported case"),
     }
 }
 
@@ -47,25 +60,12 @@ fn toml_test_harness() {
     harness.version("1.0.0");
     harness
         .ignore([
-            "valid/example.toml",
-            "valid/spec-example-1-compact.toml",
-            "valid/spec-example-1.toml",
             "valid/array/array-subtables.toml",
-            "valid/array/array.toml",
             "valid/array/open-parent-table.toml",
             "valid/array/string-quote-comma-2.toml",
             "valid/array/string-quote-comma.toml",
             "valid/array/table-array-string-backslash.toml",
-            "valid/comment/everywhere.toml",
             "valid/comment/tricky.toml",
-            "valid/datetime/datetime.toml",
-            "valid/datetime/edge.toml",
-            "valid/datetime/leap-year.toml",
-            "valid/datetime/local-date.toml",
-            "valid/datetime/local-time.toml",
-            "valid/datetime/local.toml",
-            "valid/datetime/milliseconds.toml",
-            "valid/datetime/timezone.toml",
             "valid/inline-table/empty.toml",
             "valid/inline-table/key-dotted-1.toml",
             "valid/inline-table/key-dotted-2.toml",
@@ -79,11 +79,6 @@ fn toml_test_harness() {
             "valid/key/space.toml",
             "valid/spec/array-of-tables-1.toml",
             "valid/spec/inline-table-0.toml",
-            "valid/spec/local-date-0.toml",
-            "valid/spec/local-date-time-0.toml",
-            "valid/spec/local-time-0.toml",
-            "valid/spec/offset-date-time-0.toml",
-            "valid/spec/offset-date-time-1.toml",
             "valid/spec/string-0.toml",
             "valid/spec/string-2.toml",
             "valid/spec/string-3.toml",
@@ -94,7 +89,6 @@ fn toml_test_harness() {
             "valid/spec/table-4.toml",
             "valid/spec/table-5.toml",
             "valid/spec/table-6.toml",
-            "valid/spec/table-7.toml",
             "valid/string/double-quote-escape.toml",
             "valid/string/ends-in-whitespace-escape.toml",
             "valid/string/escape-tricky.toml",
