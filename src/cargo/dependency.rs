@@ -7,7 +7,7 @@ use crate::{Table, Value};
 
 /// The dependencies.
 #[derive(Debug, Clone, Deserialize)]
-pub struct Dependencies<'d>(#[serde(borrow)] BTreeMap<&'d str, Dependency<'d>>);
+pub struct Dependencies<'d>(#[serde(borrow)] BTreeMap<Cow<'d, str>, Dependency<'d>>);
 
 impl<'d> Dependencies<'d> {
     /// Get a dependency by name.
@@ -17,25 +17,25 @@ impl<'d> Dependencies<'d> {
 
     /// Iterate over the dependencies.
     pub fn iter(&self) -> impl Iterator<Item = (&str, &Dependency<'d>)> {
-        self.0.iter().map(|(k, v)| (*k, v))
+        self.0.iter().map(|(k, v)| (&**k, v))
     }
 }
 
 /// A dependency.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Dependency<'d> {
-    version: Option<&'d str>,
+    version: Option<Cow<'d, str>>,
     optional: Option<bool>,
-    features: Option<Vec<&'d str>>,
+    features: Option<Vec<Cow<'d, str>>>,
     workspace: Option<bool>,
-    package: Option<&'d str>,
+    package: Option<Cow<'d, str>>,
     source: Option<Source<'d>>,
 }
 
 impl Dependency<'_> {
     /// The version of the dependency.
     pub fn version(&self) -> Option<&str> {
-        self.version
+        self.version.as_deref()
     }
 
     /// Whether the dependency is optional.
@@ -46,8 +46,8 @@ impl Dependency<'_> {
     }
 
     /// The features of the dependency.
-    pub fn features(&self) -> Option<&[&str]> {
-        self.features.as_deref()
+    pub fn features(&self) -> Option<impl Iterator<Item = &str>> {
+        self.features.as_ref().map(|v| v.iter().map(|s| &**s))
     }
 
     /// Inherit from the workspace.
@@ -57,7 +57,7 @@ impl Dependency<'_> {
 
     /// The package name.
     pub fn package(&self) -> Option<&str> {
-        self.package
+        self.package.as_deref()
     }
 
     /// The source.
@@ -73,11 +73,7 @@ impl<'d, 'de: 'd> Deserialize<'de> for Dependency<'d> {
     {
         let value = Value::deserialize(deserializer)?;
         match value {
-            Value::String(Cow::Owned(_)) => Err(de::Error::invalid_type(
-                de::Unexpected::Other("not a borrowed string"),
-                &"a borrowed string",
-            )),
-            Value::String(Cow::Borrowed(version)) => Ok(Dependency {
+            Value::String(version) => Ok(Dependency {
                 version: Some(version),
                 optional: None,
                 features: None,
@@ -129,7 +125,7 @@ pub enum Source<'r> {
     /// A git repository.
     Git(Git<'r>),
     /// The local file path to a crate.
-    Path(&'r str),
+    Path(Cow<'r, str>),
 }
 
 impl<'r> Source<'r> {
@@ -171,7 +167,7 @@ impl<'r> Source<'r> {
 /// The git properties.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Git<'g> {
-    repo: &'g str,
+    repo: Cow<'g, str>,
     commit: Option<GitCommit<'g>>,
 }
 
@@ -192,7 +188,7 @@ impl<'c> Git<'c> {
 
     /// The git repository.
     pub fn repository(&self) -> &str {
-        self.repo
+        &self.repo
     }
 
     /// The commit of the git dependency.
@@ -205,11 +201,11 @@ impl<'c> Git<'c> {
 #[derive(Debug, Clone, PartialEq)]
 pub enum GitCommit<'c> {
     /// A branch name.
-    Branch(&'c str),
+    Branch(Cow<'c, str>),
     /// A tag.
-    Tag(&'c str),
+    Tag(Cow<'c, str>),
     /// A revision.
-    Rev(&'c str),
+    Rev(Cow<'c, str>),
 }
 
 impl<'c> GitCommit<'c> {
@@ -258,14 +254,14 @@ impl<'c> GitCommit<'c> {
     }
 }
 
-fn get_string<'t, E>(table: &Table<'t>, key: &str) -> Result<Option<&'t str>, E>
+fn get_string<'t, E>(table: &Table<'t>, key: &str) -> Result<Option<Cow<'t, str>>, E>
 where
     E: de::Error,
 {
     table
         .get(key)
         .map(|v| match v {
-            Value::String(Cow::Borrowed(s)) => Ok(s),
+            Value::String(s) => Ok(s),
             _ => Err(de::Error::invalid_type(
                 de::Unexpected::Other("not a borrowed string"),
                 &"a borrowed string",

@@ -1,6 +1,8 @@
 //! Cargo package information.
 
-use alloc::vec::Vec;
+use core::borrow::Borrow;
+
+use alloc::{borrow::Cow, vec::Vec};
 use serde::Deserialize;
 
 use super::{Author, ResolverVersion, RustEdition};
@@ -9,31 +11,31 @@ use crate::{Table, Value};
 /// The package information.
 #[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct Package<'p> {
-    name: &'p str,
+    name: Cow<'p, str>,
     #[serde(borrow)]
-    version: Option<WorkspaceInheritable<&'p str>>,
+    version: Option<WorkspaceInheritable<Cow<'p, str>>>,
     edition: Option<WorkspaceInheritable<RustEdition>>,
     #[serde(rename = "rust-version")]
-    rust_version: Option<WorkspaceInheritable<&'p str>>,
+    rust_version: Option<WorkspaceInheritable<Cow<'p, str>>>,
     authors: Option<WorkspaceInheritable<Vec<Author<'p>>>>,
-    description: Option<WorkspaceInheritable<&'p str>>,
-    documentation: Option<WorkspaceInheritable<&'p str>>,
-    readme: Option<WorkspaceInheritable<&'p str>>,
-    homepage: Option<WorkspaceInheritable<&'p str>>,
-    repository: Option<WorkspaceInheritable<&'p str>>,
-    license: Option<WorkspaceInheritable<&'p str>>,
-    license_file: Option<WorkspaceInheritable<&'p str>>,
-    keywords: Option<WorkspaceInheritable<Vec<&'p str>>>,
-    categories: Option<WorkspaceInheritable<Vec<&'p str>>>,
-    workspace: Option<&'p str>,
-    build: Option<&'p str>,
-    links: Option<&'p str>,
+    description: Option<WorkspaceInheritable<Cow<'p, str>>>,
+    documentation: Option<WorkspaceInheritable<Cow<'p, str>>>,
+    readme: Option<WorkspaceInheritable<Cow<'p, str>>>,
+    homepage: Option<WorkspaceInheritable<Cow<'p, str>>>,
+    repository: Option<WorkspaceInheritable<Cow<'p, str>>>,
+    license: Option<WorkspaceInheritable<Cow<'p, str>>>,
+    license_file: Option<WorkspaceInheritable<Cow<'p, str>>>,
+    keywords: Option<WorkspaceInheritable<Vec<Cow<'p, str>>>>,
+    categories: Option<WorkspaceInheritable<Vec<Cow<'p, str>>>>,
+    workspace: Option<Cow<'p, str>>,
+    build: Option<Cow<'p, str>>,
+    links: Option<Cow<'p, str>>,
     publish: Option<WorkspaceInheritable<bool>>,
     metadata: Option<Table<'p>>,
-    include: Option<WorkspaceInheritable<Vec<&'p str>>>,
-    exclude: Option<WorkspaceInheritable<Vec<&'p str>>>,
+    include: Option<WorkspaceInheritable<Vec<Cow<'p, str>>>>,
+    exclude: Option<WorkspaceInheritable<Vec<Cow<'p, str>>>>,
     #[serde(rename = "default-run")]
-    default_run: Option<&'p str>,
+    default_run: Option<Cow<'p, str>>,
     autobins: Option<bool>,
     autoexamples: Option<bool>,
     autotests: Option<bool>,
@@ -44,12 +46,12 @@ pub struct Package<'p> {
 impl<'p> Package<'p> {
     /// The package name.
     pub fn name(&self) -> &str {
-        self.name
+        &self.name
     }
 
     /// The package version.
-    pub fn version(&self) -> Option<&WorkspaceInheritable<&'p str>> {
-        self.version.as_ref()
+    pub fn version(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.version.as_ref().map(WorkspaceInheritable::borrow)
     }
 
     /// The Rust edition.
@@ -58,73 +60,81 @@ impl<'p> Package<'p> {
     }
 
     /// The required Rust version.
-    pub fn rust_version(&self) -> Option<&WorkspaceInheritable<&'p str>> {
-        self.rust_version.as_ref()
+    pub fn rust_version(&self) -> Option<WorkspaceInheritable<&str>> {
+        self.rust_version.as_ref().map(WorkspaceInheritable::borrow)
     }
 
     /// The list of authors.
-    pub fn authors(&self) -> Option<WorkspaceInheritable<&[Author<'p>]>> {
-        self.authors.as_ref().map(WorkspaceInheritable::as_slice)
+    pub fn authors(&self) -> Option<WorkspaceInheritable<impl Iterator<Item = &Author<'_>>>> {
+        self.authors
+            .as_ref()
+            .map(WorkspaceInheritable::borrow_iteratable)
     }
 
     /// The package description.
     pub fn description(&self) -> Option<WorkspaceInheritable<&str>> {
-        self.description.clone()
+        self.description.as_ref().map(WorkspaceInheritable::borrow)
     }
 
     /// The package documentation URL.
     pub fn documentation(&self) -> Option<WorkspaceInheritable<&str>> {
-        self.documentation.clone()
+        self.documentation
+            .as_ref()
+            .map(WorkspaceInheritable::borrow)
     }
 
     /// The path to the README file.
     pub fn readme(&self) -> Option<WorkspaceInheritable<&str>> {
-        self.readme.clone()
+        self.readme.as_ref().map(WorkspaceInheritable::borrow)
     }
 
     /// The package homepage URL.
     pub fn homepage(&self) -> Option<WorkspaceInheritable<&str>> {
-        self.homepage.clone()
+        self.homepage.as_ref().map(WorkspaceInheritable::borrow)
     }
 
     /// The package repository URL.
     pub fn repository(&self) -> Option<WorkspaceInheritable<&str>> {
-        self.repository.clone()
+        self.repository.as_ref().map(WorkspaceInheritable::borrow)
     }
 
     /// The package license.
     pub fn license(&self) -> Option<WorkspaceInheritable<&str>> {
-        self.license.clone()
+        self.license.as_ref().map(WorkspaceInheritable::borrow)
     }
 
     /// The path to the license file.
     pub fn license_file(&self) -> Option<WorkspaceInheritable<&str>> {
-        self.license_file.clone()
+        self.license_file.as_ref().map(WorkspaceInheritable::borrow)
     }
 
     /// The package keywords.
-    pub fn keywords(&self) -> Option<WorkspaceInheritable<&[&str]>> {
-        self.keywords.as_ref().map(WorkspaceInheritable::as_slice)
+    pub fn keywords(&self) -> Option<WorkspaceInheritable<impl Iterator<Item = &str>>> {
+        self.keywords
+            .as_ref()
+            .map(WorkspaceInheritable::borrow_iteratable)
     }
 
     /// The package categories.
-    pub fn categories(&self) -> Option<WorkspaceInheritable<&[&str]>> {
-        self.categories.as_ref().map(WorkspaceInheritable::as_slice)
+    pub fn categories(&self) -> Option<WorkspaceInheritable<impl Iterator<Item = &str>>> {
+        self.categories
+            .as_ref()
+            .map(WorkspaceInheritable::borrow_iteratable)
     }
 
     /// The workspace path.
     pub fn workspace(&self) -> Option<&str> {
-        self.workspace
+        self.workspace.as_deref()
     }
 
     /// The build script path.
     pub fn build(&self) -> Option<&str> {
-        self.build
+        self.build.as_deref()
     }
 
     /// The package links.
     pub fn links(&self) -> Option<&str> {
-        self.links
+        self.links.as_deref()
     }
 
     /// Whether the package should be published.
@@ -138,18 +148,22 @@ impl<'p> Package<'p> {
     }
 
     /// The paths to include.
-    pub fn include(&self) -> Option<WorkspaceInheritable<&[&str]>> {
-        self.include.as_ref().map(WorkspaceInheritable::as_slice)
+    pub fn include(&self) -> Option<WorkspaceInheritable<impl Iterator<Item = &str>>> {
+        self.include
+            .as_ref()
+            .map(WorkspaceInheritable::borrow_iteratable)
     }
 
     /// The paths to exclude.
-    pub fn exclude(&self) -> Option<WorkspaceInheritable<&[&str]>> {
-        self.exclude.as_ref().map(WorkspaceInheritable::as_slice)
+    pub fn exclude(&self) -> Option<WorkspaceInheritable<impl Iterator<Item = &str>>> {
+        self.exclude
+            .as_ref()
+            .map(WorkspaceInheritable::borrow_iteratable)
     }
 
     /// The default run command.
     pub fn default_run(&self) -> Option<&str> {
-        self.default_run
+        self.default_run.as_deref()
     }
 
     /// Whether to automatically build binaries.
@@ -189,7 +203,15 @@ pub enum WorkspaceInheritable<W> {
 
 impl<W> WorkspaceInheritable<W> {
     /// Get the value if it is uninherited.
-    pub fn uninherited(&self) -> Option<&W> {
+    pub fn uninherited(self) -> Option<W> {
+        match self {
+            Self::Uninherited(value) => Some(value),
+            Self::Inherited => None,
+        }
+    }
+
+    /// Get a reference to the value if it is uninherited.
+    pub fn uninherited_ref(&self) -> Option<&W> {
         match self {
             Self::Uninherited(value) => Some(value),
             Self::Inherited => None,
@@ -200,14 +222,29 @@ impl<W> WorkspaceInheritable<W> {
     pub fn inherited(&self) -> bool {
         matches!(self, Self::Inherited)
     }
+
+    fn borrow<Borrowed: ?Sized>(&self) -> WorkspaceInheritable<&Borrowed>
+    where
+        W: AsRef<Borrowed>,
+    {
+        match self {
+            WorkspaceInheritable::Uninherited(d) => WorkspaceInheritable::Uninherited(d.as_ref()),
+            WorkspaceInheritable::Inherited => WorkspaceInheritable::Inherited,
+        }
+    }
 }
 
 impl<T> WorkspaceInheritable<Vec<T>> {
-    /// Get the value as a slice if it is uninherited.
-    pub fn as_slice(&self) -> WorkspaceInheritable<&[T]> {
+    fn borrow_iteratable<'w, U>(&'w self) -> WorkspaceInheritable<impl Iterator<Item = &'w U>>
+    where
+        T: Borrow<U>,
+        U: 'w + ?Sized,
+    {
         match self {
-            Self::Uninherited(value) => WorkspaceInheritable::Uninherited(value.as_slice()),
-            Self::Inherited => WorkspaceInheritable::Inherited,
+            WorkspaceInheritable::Uninherited(d) => {
+                WorkspaceInheritable::Uninherited(d.iter().map(Borrow::borrow))
+            }
+            WorkspaceInheritable::Inherited => WorkspaceInheritable::Inherited,
         }
     }
 }

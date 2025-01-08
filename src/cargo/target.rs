@@ -1,11 +1,11 @@
-use alloc::collections::BTreeMap;
+use alloc::{borrow::Cow, collections::BTreeMap};
 use serde::Deserialize;
 
 use super::Dependencies;
 
 /// The set of target-specific options.
 #[derive(Debug, Deserialize)]
-pub struct Targets<'t>(#[serde(borrow)] BTreeMap<&'t str, Target<'t>>);
+pub struct Targets<'t>(#[serde(borrow)] BTreeMap<Cow<'t, str>, Target<'t>>);
 
 impl<'t> Targets<'t> {
     /// Get a target by name.
@@ -15,7 +15,7 @@ impl<'t> Targets<'t> {
 
     /// Iterate over the targets.
     pub fn iter(&self) -> impl Iterator<Item = (&str, &Target<'t>)> {
-        self.0.iter().map(|(k, v)| (*k, v))
+        self.0.iter().map(|(k, v)| (&**k, v))
     }
 }
 

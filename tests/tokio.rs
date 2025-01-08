@@ -16,7 +16,7 @@ fn tokio() {
     // bytes
     let bytes = dependencies.get("bytes").unwrap().as_table().unwrap();
     assert_eq!(bytes.get("version").unwrap().as_str().unwrap(), "1.0.0");
-    assert_eq!(bytes.get("optional").unwrap().as_bool().unwrap(), true);
+    assert!(bytes.get("optional").unwrap().as_bool().unwrap());
 
     let dev_deps = parsed_map
         .get("dev-dependencies")
@@ -70,9 +70,9 @@ fn tokio_serde() {
     let manifest: Manifest = tomling::from_str(CARGO_TOML).unwrap();
     let package = manifest.package().unwrap();
     assert_eq!(package.name(), "tokio");
-    assert_eq!(package.version().unwrap(), &"1.41.1".into());
+    assert_eq!(package.version().unwrap(), "1.41.1".into());
     assert_eq!(
-        package.edition().unwrap().uninherited().unwrap(),
+        package.edition().unwrap().uninherited_ref().unwrap(),
         &RustEdition::E2021
     );
 
@@ -91,7 +91,13 @@ fn tokio_serde() {
         .unwrap();
     assert_eq!(socket2.version().unwrap(), "0.5.5");
     assert_eq!(socket2.optional(), Some(true));
-    assert_eq!(socket2.features(), Some(&["all"][..]));
+    assert_eq!(
+        socket2
+            .features()
+            .map(|f| f.map(|s| s).collect::<Vec<_>>())
+            .as_deref(),
+        Some(&["all"][..])
+    );
 
     let tokio_test = manifest
         .dev_dependencies()
@@ -99,7 +105,7 @@ fn tokio_serde() {
         .by_name("tokio-test")
         .unwrap();
     assert_eq!(tokio_test.version().unwrap(), "0.4.0");
-    assert_eq!(tokio_test.features(), None);
+    assert!(tokio_test.features().is_none());
 
     let windows_sys = manifest
         .targets()
@@ -112,7 +118,10 @@ fn tokio_serde() {
         .unwrap();
     assert_eq!(windows_sys.version().unwrap(), "0.52");
     assert_eq!(
-        windows_sys.features(),
+        windows_sys
+            .features()
+            .map(|f| f.map(|s| s).collect::<Vec<_>>())
+            .as_deref(),
         Some(&["Win32_Foundation", "Win32_Security_Authorization"][..])
     );
 }
