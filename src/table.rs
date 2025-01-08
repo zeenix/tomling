@@ -83,3 +83,28 @@ impl<'i, 'a> Iterator for Iter<'i, 'a> {
         self.iter.next()
     }
 }
+
+impl<'a> IntoIterator for Table<'a> {
+    type Item = (Cow<'a, str>, Value<'a>);
+    type IntoIter = IntoIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter {
+            iter: self.0.into_iter(),
+        }
+    }
+}
+
+/// An iterator over the key-value pairs of a table that moves out of the `Table`.
+#[derive(Debug)]
+pub struct IntoIter<'a> {
+    iter: alloc::collections::btree_map::IntoIter<Cow<'a, str>, Value<'a>>,
+}
+
+impl<'a> Iterator for IntoIter<'a> {
+    type Item = (Cow<'a, str>, Value<'a>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
