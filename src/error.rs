@@ -18,6 +18,8 @@ pub enum Error {
         /// The type to which the conversion was attempted.
         to: &'static str,
     },
+    /// Invalid date and time encoding.
+    Datetime,
 }
 
 // TODO: Implement core::error::Error instead when we can bump the MSRV to 1.81.
@@ -29,6 +31,7 @@ impl std::error::Error for Error {
             #[cfg(feature = "serde")]
             Error::Deserialize(d) => Some(d),
             Error::Convert { .. } => None,
+            Error::Datetime => None,
         }
     }
 }
@@ -40,6 +43,7 @@ impl alloc::fmt::Display for Error {
             #[cfg(feature = "serde")]
             Error::Deserialize(s) => write!(f, "{s}"),
             Error::Convert { from, to } => write!(f, "cannot convert from {from} to {to}"),
+            Error::Datetime => write!(f, "invalid date and time encoding"),
         }
     }
 }
