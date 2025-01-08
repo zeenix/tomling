@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use toml_test_harness::{Decoded, Decoder, DecoderHarness};
+use toml_test_harness::{Decoded, DecodedValue, Decoder, DecoderHarness};
 use tomling::{parse, Table, Value};
 
 #[derive(Clone, Copy)]
@@ -38,6 +38,19 @@ fn value_to_decoded(value: &Value<'_>) -> Decoded {
         &Value::Boolean(b) => Decoded::Value(b.into()),
         Value::Array(a) => Decoded::Array(a.iter().map(value_to_decoded).collect()),
         Value::Table(t) => Decoded::Table(map_table(t)),
+        Value::Datetime(dt) => Decoded::Value(map_date_time(dt)),
+    }
+}
+
+fn map_date_time(dt: &tomling::Datetime) -> DecodedValue {
+    let value = dt.to_string();
+
+    match (dt.date.is_some(), dt.time.is_some(), dt.offset.is_some()) {
+        (true, true, true) => DecodedValue::Datetime(value),
+        (true, true, false) => DecodedValue::DatetimeLocal(value),
+        (true, false, false) => DecodedValue::DateLocal(value),
+        (false, true, false) => DecodedValue::TimeLocal(value),
+        _ => unreachable!("Unsupported case"),
     }
 }
 
