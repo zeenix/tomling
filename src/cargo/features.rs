@@ -1,9 +1,9 @@
-use alloc::{collections::BTreeMap, vec::Vec};
+use alloc::{borrow::Cow, collections::BTreeMap, vec::Vec};
 use serde::Deserialize;
 
 /// A Cargo features section.
 #[derive(Debug, Deserialize)]
-pub struct Features<'f>(#[serde(borrow)] BTreeMap<&'f str, Vec<&'f str>>);
+pub struct Features<'f>(#[serde(borrow)] BTreeMap<Cow<'f, str>, Vec<&'f str>>);
 
 impl Features<'_> {
     /// Get the features by name.
@@ -13,6 +13,6 @@ impl Features<'_> {
 
     /// Iterate over the features.
     pub fn iter(&self) -> impl Iterator<Item = (&str, &[&str])> {
-        self.0.iter().map(|(k, v)| (*k, v.as_slice()))
+        self.0.iter().map(|(k, v)| (&**k, v.as_slice()))
     }
 }

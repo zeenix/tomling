@@ -1,29 +1,29 @@
-use alloc::vec::Vec;
+use alloc::{borrow::Cow, vec::Vec};
 use serde::Deserialize;
 
 /// A test target.
 #[derive(Debug, Deserialize)]
 pub struct Test<'b> {
-    name: &'b str,
-    path: Option<&'b str>,
+    name: Cow<'b, str>,
+    path: Option<Cow<'b, str>>,
     test: Option<bool>,
     bench: Option<bool>,
     doc: Option<bool>,
     harness: Option<bool>,
-    edition: Option<&'b str>,
+    edition: Option<Cow<'b, str>>,
     #[serde(rename = "required-features")]
-    required_features: Option<Vec<&'b str>>,
+    required_features: Option<Vec<Cow<'b, str>>>,
 }
 
 impl Test<'_> {
     /// The name of the test.
     pub fn name(&self) -> &str {
-        self.name
+        &self.name
     }
 
     /// The path to the source of the test.
     pub fn path(&self) -> Option<&str> {
-        self.path
+        self.path.as_deref()
     }
 
     /// Whether or not the test is tested by default by `cargo test`.
@@ -48,11 +48,13 @@ impl Test<'_> {
 
     /// The Rust edition this test requires.
     pub fn edition(&self) -> Option<&str> {
-        self.edition
+        self.edition.as_deref()
     }
 
     /// The required features of the test.
-    pub fn required_features(&self) -> Option<&[&str]> {
-        self.required_features.as_deref()
+    pub fn required_features(&self) -> Option<impl Iterator<Item = &str>> {
+        self.required_features
+            .as_ref()
+            .map(|v| v.iter().map(|s| &**s))
     }
 }

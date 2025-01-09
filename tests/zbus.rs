@@ -31,7 +31,7 @@ fn zbus() {
     // Tokio
     let tokio = dependencies.get("tokio").unwrap().as_table().unwrap();
     assert_eq!(tokio.get("version").unwrap().as_str().unwrap(), "1.37.0");
-    assert_eq!(tokio.get("optional").unwrap().as_bool().unwrap(), true);
+    assert!(tokio.get("optional").unwrap().as_bool().unwrap());
     assert_eq!(
         tokio.get("features").unwrap(),
         &["rt", "net", "time", "fs", "io-util", "process", "sync", "tracing",]
@@ -53,10 +53,7 @@ fn zbus() {
         })
         .unwrap();
     assert_eq!(nix.get("version").unwrap().as_str().unwrap(), "0.29");
-    assert_eq!(
-        nix.get("default-features").unwrap().as_bool().unwrap(),
-        false
-    );
+    assert!(!nix.get("default-features").unwrap().as_bool().unwrap());
     assert_eq!(
         nix.get("features").unwrap(),
         &["socket", "uio", "user"].into_iter().collect::<Value>()
@@ -80,7 +77,7 @@ fn zbus() {
         .and_then(|v| v.as_array()?[0].as_table())
         .unwrap();
     assert_eq!(bench.get("name").unwrap().as_str().unwrap(), "benchmarks");
-    assert_eq!(bench.get("harness").unwrap().as_bool().unwrap(), false);
+    assert!(!bench.get("harness").unwrap().as_bool().unwrap());
 
     // Finally, the examples
     let examples = parsed_map.get("example").unwrap().as_array().unwrap();
@@ -120,20 +117,29 @@ fn zbus_serde() {
 
     let package = manifest.package().unwrap();
     assert_eq!(package.name(), "zbus");
-    assert_eq!(package.version().unwrap(), &"5.1.1".into());
+    assert_eq!(package.version().unwrap(), "5.1.1".into());
     assert!(package.edition().unwrap().inherited());
 
     let serde = manifest.dependencies().unwrap().by_name("serde").unwrap();
     assert!(serde.version().is_none());
     assert_eq!(serde.workspace(), Some(true));
-    assert_eq!(serde.features(), Some(&["derive"][..]));
+    assert_eq!(
+        serde
+            .features()
+            .map(|f| f.map(|s| s).collect::<Vec<_>>())
+            .as_deref(),
+        Some(&["derive"][..]),
+    );
     assert_eq!(serde.package(), Some("serde"));
 
     let tokio = manifest.dependencies().unwrap().by_name("tokio").unwrap();
     assert_eq!(tokio.version().unwrap(), "1.37.0");
     assert!(tokio.optional().unwrap());
     assert_eq!(
-        tokio.features(),
+        tokio
+            .features()
+            .map(|f| f.map(|s| s).collect::<Vec<_>>())
+            .as_deref(),
         Some(&["rt", "net", "time", "fs", "io-util", "process", "sync", "tracing"][..])
     );
 
@@ -154,7 +160,7 @@ fn zbus_serde() {
     let manifest: Manifest = tomling::from_str(WORKSPACE_CARGO_TOML).unwrap();
     let workspace = manifest.workspace().unwrap();
     assert_eq!(
-        workspace.members().unwrap(),
+        workspace.members().unwrap().map(|s| s).collect::<Vec<_>>(),
         &[
             "zbus",
             "zvariant",

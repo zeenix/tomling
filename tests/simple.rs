@@ -104,22 +104,28 @@ fn simple_cargo_toml_serde() {
     assert_eq!(package.name(), "example");
     assert!(package.version().unwrap().inherited());
     assert_eq!(
-        package.edition().unwrap().uninherited().unwrap(),
+        package.edition().unwrap().uninherited_ref().unwrap(),
         &RustEdition::E2021,
     );
     assert_eq!(package.resolver().unwrap(), ResolverVersion::V2);
     let authors = package.authors().unwrap();
-    let authors = authors.uninherited().unwrap();
-    let alice = &authors[0];
+    let mut authors = authors.uninherited().unwrap();
+    let alice = authors.next().unwrap();
     assert_eq!(alice.name(), "Alice Great");
     assert_eq!(alice.email(), Some("foo@bar.com"));
-    let bob = &authors[1];
+    let bob = authors.next().unwrap();
     assert_eq!(bob.name(), "Bob Less");
     assert_eq!(bob.email(), None);
 
     let serde = manifest.dependencies().unwrap().by_name("serde").unwrap();
     assert_eq!(serde.version().unwrap(), "1.0");
-    assert_eq!(serde.features(), Some(&["std", "derive"][..]));
+    assert_eq!(
+        serde
+            .features()
+            .map(|f| f.map(|s| s).collect::<Vec<_>>())
+            .as_deref(),
+        Some(&["std", "derive"][..])
+    );
 
     let regex = manifest.dependencies().unwrap().by_name("regex").unwrap();
     assert_eq!(regex.version().unwrap(), "1.5");

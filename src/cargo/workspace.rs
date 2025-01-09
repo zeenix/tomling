@@ -1,6 +1,6 @@
 //! Cargo package information.
 
-use alloc::vec::Vec;
+use alloc::{borrow::Cow, vec::Vec};
 use serde::Deserialize;
 
 use super::{Author, Dependencies, ResolverVersion, RustEdition};
@@ -13,10 +13,10 @@ pub struct Workspace<'p> {
     package: Option<Package<'p>>,
     resolver: Option<ResolverVersion>,
     dependencies: Option<Dependencies<'p>>,
-    members: Option<Vec<&'p str>>,
+    members: Option<Vec<Cow<'p, str>>>,
     #[serde(rename = "default-members")]
-    default_members: Option<Vec<&'p str>>,
-    exclude: Option<Vec<&'p str>>,
+    default_members: Option<Vec<Cow<'p, str>>>,
+    exclude: Option<Vec<Cow<'p, str>>>,
     metadata: Option<Table<'p>>,
     lints: Option<Table<'p>>,
 }
@@ -38,18 +38,20 @@ impl<'p> Workspace<'p> {
     }
 
     /// The workspace members.
-    pub fn members(&self) -> Option<&[&str]> {
-        self.members.as_deref()
+    pub fn members(&self) -> Option<impl Iterator<Item = &str>> {
+        self.members.as_ref().map(|v| v.iter().map(|s| &**s))
     }
 
     /// The default workspace members.
-    pub fn default_members(&self) -> Option<&[&str]> {
-        self.default_members.as_deref()
+    pub fn default_members(&self) -> Option<impl Iterator<Item = &str>> {
+        self.default_members
+            .as_ref()
+            .map(|v| v.iter().map(|s| &**s))
     }
 
     /// The paths to exclude.
-    pub fn exclude(&self) -> Option<&[&str]> {
-        self.exclude.as_deref()
+    pub fn exclude(&self) -> Option<impl Iterator<Item = &str>> {
+        self.exclude.as_ref().map(|v| v.iter().map(|s| &**s))
     }
 
     /// The workspace metadata.
@@ -67,29 +69,29 @@ impl<'p> Workspace<'p> {
 #[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct Package<'p> {
     #[serde(borrow)]
-    version: Option<&'p str>,
+    version: Option<Cow<'p, str>>,
     edition: Option<RustEdition>,
     #[serde(rename = "rust-version")]
-    rust_version: Option<&'p str>,
+    rust_version: Option<Cow<'p, str>>,
     authors: Option<Vec<Author<'p>>>,
-    description: Option<&'p str>,
-    documentation: Option<&'p str>,
-    readme: Option<&'p str>,
-    homepage: Option<&'p str>,
-    repository: Option<&'p str>,
-    license: Option<&'p str>,
-    license_file: Option<&'p str>,
-    keywords: Option<Vec<&'p str>>,
-    categories: Option<Vec<&'p str>>,
+    description: Option<Cow<'p, str>>,
+    documentation: Option<Cow<'p, str>>,
+    readme: Option<Cow<'p, str>>,
+    homepage: Option<Cow<'p, str>>,
+    repository: Option<Cow<'p, str>>,
+    license: Option<Cow<'p, str>>,
+    license_file: Option<Cow<'p, str>>,
+    keywords: Option<Vec<Cow<'p, str>>>,
+    categories: Option<Vec<Cow<'p, str>>>,
     publish: Option<bool>,
-    include: Option<Vec<&'p str>>,
-    exclude: Option<Vec<&'p str>>,
+    include: Option<Vec<Cow<'p, str>>>,
+    exclude: Option<Vec<Cow<'p, str>>>,
 }
 
 impl<'p> Package<'p> {
     /// The package version.
     pub fn version(&self) -> Option<&str> {
-        self.version
+        self.version.as_deref()
     }
 
     /// The Rust edition.
@@ -99,7 +101,7 @@ impl<'p> Package<'p> {
 
     /// The required Rust version.
     pub fn rust_version(&self) -> Option<&str> {
-        self.rust_version
+        self.rust_version.as_deref()
     }
 
     /// The list of authors.
@@ -109,47 +111,47 @@ impl<'p> Package<'p> {
 
     /// The package description.
     pub fn description(&self) -> Option<&str> {
-        self.description
+        self.description.as_deref()
     }
 
     /// The package documentation URL.
     pub fn documentation(&self) -> Option<&str> {
-        self.documentation
+        self.documentation.as_deref()
     }
 
     /// The path to the README file.
     pub fn readme(&self) -> Option<&str> {
-        self.readme
+        self.readme.as_deref()
     }
 
     /// The package homepage URL.
     pub fn homepage(&self) -> Option<&str> {
-        self.homepage
+        self.homepage.as_deref()
     }
 
     /// The package repository URL.
     pub fn repository(&self) -> Option<&str> {
-        self.repository
+        self.repository.as_deref()
     }
 
     /// The package license.
     pub fn license(&self) -> Option<&str> {
-        self.license
+        self.license.as_deref()
     }
 
     /// The path to the license file.
     pub fn license_file(&self) -> Option<&str> {
-        self.license_file
+        self.license_file.as_deref()
     }
 
     /// The package keywords.
-    pub fn keywords(&self) -> Option<&[&str]> {
-        self.keywords.as_deref()
+    pub fn keywords(&self) -> Option<impl Iterator<Item = &str>> {
+        self.keywords.as_ref().map(|v| v.iter().map(|s| &**s))
     }
 
     /// The package categories.
-    pub fn categories(&self) -> Option<&[&str]> {
-        self.categories.as_deref()
+    pub fn categories(&self) -> Option<impl Iterator<Item = &str>> {
+        self.categories.as_ref().map(|v| v.iter().map(|s| &**s))
     }
 
     /// Whether the package should be published.
@@ -158,12 +160,12 @@ impl<'p> Package<'p> {
     }
 
     /// The paths to include.
-    pub fn include(&self) -> Option<&[&str]> {
-        self.include.as_deref()
+    pub fn include(&self) -> Option<impl Iterator<Item = &str>> {
+        self.include.as_ref().map(|v| v.iter().map(|s| &**s))
     }
 
     /// The paths to exclude.
-    pub fn exclude(&self) -> Option<&[&str]> {
-        self.exclude.as_deref()
+    pub fn exclude(&self) -> Option<impl Iterator<Item = &str>> {
+        self.exclude.as_ref().map(|v| v.iter().map(|s| &**s))
     }
 }

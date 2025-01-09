@@ -1,11 +1,11 @@
-use alloc::vec::Vec;
+use alloc::{borrow::Cow, vec::Vec};
 use serde::Deserialize;
 
 /// A library target.
 #[derive(Debug, Deserialize)]
 pub struct Library<'l> {
-    name: Option<&'l str>,
-    path: Option<&'l str>,
+    name: Option<Cow<'l, str>>,
+    path: Option<Cow<'l, str>>,
     test: Option<bool>,
     bench: Option<bool>,
     doc: Option<bool>,
@@ -13,7 +13,7 @@ pub struct Library<'l> {
     #[serde(rename = "proc-macro")]
     proc_macro: Option<bool>,
     harness: Option<bool>,
-    edition: Option<&'l str>,
+    edition: Option<Cow<'l, str>>,
     #[serde(rename = "crate-type")]
     library_type: Option<Vec<LibraryType>>,
 }
@@ -21,12 +21,12 @@ pub struct Library<'l> {
 impl Library<'_> {
     /// The name of the library.
     pub fn name(&self) -> Option<&str> {
-        self.name
+        self.name.as_deref()
     }
 
     /// The path to the source of the library.
     pub fn path(&self) -> Option<&str> {
-        self.path
+        self.path.as_deref()
     }
 
     /// Whether or not the library is tested by default by `cargo test`.
@@ -61,7 +61,7 @@ impl Library<'_> {
 
     /// The Rust edition this library requires.
     pub fn edition(&self) -> Option<&str> {
-        self.edition
+        self.edition.as_deref()
     }
 
     /// The crate type of the library.
