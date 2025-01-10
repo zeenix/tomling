@@ -160,6 +160,116 @@ fn simple_cargo_toml_serde() {
     assert_eq!(binary.path(), Some("src/bin/my-binary.rs"));
 }
 
+#[test]
+fn test_escape_sequences_basic_strings() {
+    use tomling::parse;
+
+    let toml_str = r#"
+        str1 = "This is a backslash: \\"
+        str2 = "This is a double quote: \""
+        str3 = "This is a backspace: \b"
+        str4 = "This is a tab: \t"
+        str5 = "This is a newline: \n"
+        str6 = "This is a form feed: \f"
+        str7 = "This is a carriage return: \r"
+        str8 = "This is a unicode character: \u0041"
+        str9 = "This is another unicode character: \U00000041"
+    "#;
+
+    let parsed_map = parse(toml_str).unwrap();
+    assert_eq!(
+        parsed_map.get("str1").unwrap().as_str().unwrap(),
+        "This is a backslash: \\"
+    );
+    assert_eq!(
+        parsed_map.get("str2").unwrap().as_str().unwrap(),
+        "This is a double quote: \""
+    );
+    assert_eq!(
+        parsed_map.get("str3").unwrap().as_str().unwrap(),
+        "This is a backspace: \x08"
+    );
+    assert_eq!(
+        parsed_map.get("str4").unwrap().as_str().unwrap(),
+        "This is a tab: \t"
+    );
+    assert_eq!(
+        parsed_map.get("str5").unwrap().as_str().unwrap(),
+        "This is a newline: \n"
+    );
+    assert_eq!(
+        parsed_map.get("str6").unwrap().as_str().unwrap(),
+        "This is a form feed: \x0C"
+    );
+    assert_eq!(
+        parsed_map.get("str7").unwrap().as_str().unwrap(),
+        "This is a carriage return: \r"
+    );
+    assert_eq!(
+        parsed_map.get("str8").unwrap().as_str().unwrap(),
+        "This is a unicode character: A"
+    );
+    assert_eq!(
+        parsed_map.get("str9").unwrap().as_str().unwrap(),
+        "This is another unicode character: A"
+    );
+}
+
+#[test]
+fn test_escape_sequences_multiline_basic_strings() {
+    use tomling::parse;
+
+    let toml_str = r#"
+        str1 = """This is a backslash: \\"""
+        str2 = """This is a double quote: \"""""
+        str3 = """This is a backspace: \b"""
+        str4 = """This is a tab: \t"""
+        str5 = """This is a newline: \n"""
+        str6 = """This is a form feed: \f"""
+        str7 = """This is a carriage return: \r"""
+        str8 = """This is a unicode character: \u0041"""
+        str9 = """This is another unicode character: \U00000041"""
+    "#;
+
+    let parsed_map = parse(toml_str).unwrap();
+    assert_eq!(
+        parsed_map.get("str1").unwrap().as_str().unwrap(),
+        "This is a backslash: \\"
+    );
+    assert_eq!(
+        parsed_map.get("str2").unwrap().as_str().unwrap(),
+        "This is a double quote: \""
+    );
+    assert_eq!(
+        parsed_map.get("str3").unwrap().as_str().unwrap(),
+        "This is a backspace: \x08"
+    );
+    assert_eq!(
+        parsed_map.get("str4").unwrap().as_str().unwrap(),
+        "This is a tab: \t"
+    );
+    assert_eq!(
+        parsed_map.get("str5").unwrap().as_str().unwrap(),
+        "This is a newline: \n"
+    );
+    assert_eq!(
+        parsed_map.get("str6").unwrap().as_str().unwrap(),
+        "This is a form feed: \x0C"
+    );
+    assert_eq!(
+        parsed_map.get("str7").unwrap().as_str().unwrap(),
+        "This is a carriage return: \r"
+    );
+    assert_eq!(
+        parsed_map.get("str8").unwrap().as_str().unwrap(),
+        "This is a unicode character: A"
+    );
+    assert_eq!(
+        parsed_map.get("str9").unwrap().as_str().unwrap(),
+        "This is another unicode character: A"
+    );
+}
+
 const CARGO_TOML: &str = r#"
 [package]
 name = "example"
