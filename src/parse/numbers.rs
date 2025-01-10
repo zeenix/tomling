@@ -1,10 +1,10 @@
 use core::ops::RangeInclusive;
 
 use winnow::{
-    combinator::{alt, cut_err, opt, peek, preceded, repeat, rest, trace},
+    combinator::{alt, cut_err, opt, peek, preceded, repeat, trace},
     dispatch,
     error::{StrContext, StrContextValue},
-    token::{one_of, take},
+    token::{one_of, rest, take},
     PResult, Parser,
 };
 
