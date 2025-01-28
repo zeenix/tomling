@@ -4,11 +4,11 @@ use winnow::{
     combinator::{alt, delimited},
     error::ContextError,
     token::take_until,
-    PResult, Parser,
+    ModalResult, Parser,
 };
 
 /// Parses a string value enclosed in quotes
-pub(crate) fn parse<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+pub(crate) fn parse<'i>(input: &mut &'i str) -> ModalResult<Value<'i>, ContextError> {
     // TODO:
     // * Handle escape sequences.
     alt((
@@ -21,21 +21,23 @@ pub(crate) fn parse<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError>
 }
 
 /// Parses a basic string value enclosed in quotes.
-pub(crate) fn parse_basic<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+pub(crate) fn parse_basic<'i>(input: &mut &'i str) -> ModalResult<Value<'i>, ContextError> {
     delimited('"', take_until(0.., '"'), '"')
         .map(Into::into)
         .parse_next(input)
 }
 
 /// Parses a literal string value enclosed in single quotes.
-pub(crate) fn parse_literal<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+pub(crate) fn parse_literal<'i>(input: &mut &'i str) -> ModalResult<Value<'i>, ContextError> {
     delimited('\'', take_until(0.., '\''), '\'')
         .map(Into::into)
         .parse_next(input)
 }
 
 /// Parses a multiline basic string value enclosed in triple quotes.
-pub(crate) fn parse_multiline_basic<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+pub(crate) fn parse_multiline_basic<'i>(
+    input: &mut &'i str,
+) -> ModalResult<Value<'i>, ContextError> {
     delimited(
         "\"\"\"",
         take_until(0.., "\"\"\"").map(|s: &str| {
@@ -49,7 +51,9 @@ pub(crate) fn parse_multiline_basic<'i>(input: &mut &'i str) -> PResult<Value<'i
 }
 
 /// Parses a literal multiline string value enclosed in triple single quotes (`'''`).
-pub(crate) fn parse_multiline_literal<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+pub(crate) fn parse_multiline_literal<'i>(
+    input: &mut &'i str,
+) -> ModalResult<Value<'i>, ContextError> {
     delimited(
         "'''",
         take_until(0.., "'''").map(|s: &str| s.trim_start_matches('\n')), // Trim leading newlines

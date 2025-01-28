@@ -4,11 +4,11 @@ use winnow::{
     dispatch,
     stream::Stream as _,
     token::{any, one_of, take_while},
-    PResult, Parser,
+    ModalResult, Parser,
 };
 
 /// Parse a comment, w/o the trailing newline.
-pub(crate) fn parse_comment(input: &mut &str) -> PResult<()> {
+pub(crate) fn parse_comment(input: &mut &str) -> ModalResult<()> {
     preceded(
         '#',
         take_while(
@@ -23,14 +23,14 @@ pub(crate) fn parse_comment(input: &mut &str) -> PResult<()> {
 }
 
 /// Parses a comment and newline (unless at EOF).
-pub(crate) fn parse_comment_newline(input: &mut &str) -> PResult<()> {
+pub(crate) fn parse_comment_newline(input: &mut &str) -> ModalResult<()> {
     (parse_comment, alt((newline, eof.void())))
         .void()
         .parse_next(input)
 }
 
 /// Parse all whitespace (including newlines) and comments.
-pub(crate) fn parse_whitespace_n_comments(input: &mut &str) -> PResult<()> {
+pub(crate) fn parse_whitespace_n_comments(input: &mut &str) -> ModalResult<()> {
     let mut start = input.checkpoint();
     loop {
         let _ = space0.parse_next(input)?;
@@ -54,7 +54,7 @@ pub(crate) fn parse_whitespace_n_comments(input: &mut &str) -> PResult<()> {
 }
 
 /// Parse a newline.
-pub(crate) fn newline(input: &mut &str) -> PResult<()> {
+pub(crate) fn newline(input: &mut &str) -> ModalResult<()> {
     dispatch! {any;
         '\n' => empty,
         '\r' => one_of('\n').void(),
