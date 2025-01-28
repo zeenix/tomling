@@ -5,21 +5,21 @@ use winnow::{
     dispatch,
     error::{StrContext, StrContextValue},
     token::{one_of, rest, take},
-    PResult, Parser,
+    ModalResult, Parser,
 };
 
 // ;; Boolean
 
 // boolean = true / false
-pub(crate) fn boolean(input: &mut &str) -> PResult<bool> {
+pub(crate) fn boolean(input: &mut &str) -> ModalResult<bool> {
     trace("boolean", alt((true_, false_))).parse_next(input)
 }
 
-fn true_(input: &mut &str) -> PResult<bool> {
+fn true_(input: &mut &str) -> ModalResult<bool> {
     (peek(TRUE), cut_err(TRUE)).value(true).parse_next(input)
 }
 
-fn false_(input: &mut &str) -> PResult<bool> {
+fn false_(input: &mut &str) -> ModalResult<bool> {
     (peek(FALSE), cut_err(FALSE)).value(false).parse_next(input)
 }
 const TRUE: &str = "true";
@@ -28,7 +28,7 @@ const FALSE: &str = "false";
 // ;; Integer
 
 // integer = dec-int / hex-int / oct-int / bin-int
-pub(crate) fn integer(input: &mut &str) -> PResult<i64> {
+pub(crate) fn integer(input: &mut &str) -> ModalResult<i64> {
     trace("integer",
     dispatch! {peek(opt::<_, &str, _, _>(take(2usize)));
         Some("0x") => cut_err(hex_int.try_map(|s| i64::from_str_radix(&s.replace('_', ""), 16))),
@@ -42,7 +42,7 @@ pub(crate) fn integer(input: &mut &str) -> PResult<i64> {
 
 // dec-int = [ minus / plus ] unsigned-dec-int
 // unsigned-dec-int = DIGIT / digit1-9 1*( DIGIT / underscore DIGIT )
-fn dec_int<'i>(input: &mut &'i str) -> PResult<&'i str> {
+fn dec_int<'i>(input: &mut &'i str) -> ModalResult<&'i str> {
     trace(
         "dec-int",
         (
@@ -78,7 +78,7 @@ const DIGIT1_9: RangeInclusive<u8> = b'1'..=b'9';
 
 // hex-prefix = %x30.78               ; 0x
 // hex-int = hex-prefix HEXDIG *( HEXDIG / underscore HEXDIG )
-fn hex_int<'i>(input: &mut &'i str) -> PResult<&'i str> {
+fn hex_int<'i>(input: &mut &'i str) -> ModalResult<&'i str> {
     trace(
         "hex-int",
         preceded(
@@ -110,7 +110,7 @@ const HEX_PREFIX: &str = "0x";
 
 // oct-prefix = %x30.6F               ; 0o
 // oct-int = oct-prefix digit0-7 *( digit0-7 / underscore digit0-7 )
-fn oct_int<'i>(input: &mut &'i str) -> PResult<&'i str> {
+fn oct_int<'i>(input: &mut &'i str) -> ModalResult<&'i str> {
     trace(
         "oct-int",
         preceded(
@@ -143,7 +143,7 @@ const DIGIT0_7: RangeInclusive<u8> = b'0'..=b'7';
 
 // bin-prefix = %x30.62               ; 0b
 // bin-int = bin-prefix digit0-1 *( digit0-1 / underscore digit0-1 )
-fn bin_int<'i>(input: &mut &'i str) -> PResult<&'i str> {
+fn bin_int<'i>(input: &mut &'i str) -> ModalResult<&'i str> {
     trace(
         "bin-int",
         preceded(
@@ -179,7 +179,7 @@ const DIGIT0_1: RangeInclusive<u8> = b'0'..=b'1';
 // float = float-int-part ( exp / frac [ exp ] )
 // float =/ special-float
 // float-int-part = dec-int
-pub(crate) fn float(input: &mut &str) -> PResult<f64> {
+pub(crate) fn float(input: &mut &str) -> ModalResult<f64> {
     trace(
         "float",
         alt((
@@ -194,7 +194,7 @@ pub(crate) fn float(input: &mut &str) -> PResult<f64> {
     .parse_next(input)
 }
 
-fn float_<'i>(input: &mut &'i str) -> PResult<&'i str> {
+fn float_<'i>(input: &mut &'i str) -> ModalResult<&'i str> {
     (
         dec_int,
         alt((exp.void(), (frac.void(), opt(exp.void())).void())),
@@ -205,7 +205,7 @@ fn float_<'i>(input: &mut &'i str) -> PResult<&'i str> {
 
 // frac = decimal-point zero-prefixable-int
 // decimal-point = %x2E               ; .
-fn frac<'i>(input: &mut &'i str) -> PResult<&'i str> {
+fn frac<'i>(input: &mut &'i str) -> ModalResult<&'i str> {
     (
         '.',
         cut_err(zero_prefixable_int)
@@ -216,7 +216,7 @@ fn frac<'i>(input: &mut &'i str) -> PResult<&'i str> {
 }
 
 // zero-prefixable-int = DIGIT *( DIGIT / underscore DIGIT )
-fn zero_prefixable_int<'i>(input: &mut &'i str) -> PResult<&'i str> {
+fn zero_prefixable_int<'i>(input: &mut &'i str) -> ModalResult<&'i str> {
     (
         digit,
         repeat(
@@ -239,7 +239,7 @@ fn zero_prefixable_int<'i>(input: &mut &'i str) -> PResult<&'i str> {
 
 // exp = "e" float-exp-part
 // float-exp-part = [ minus / plus ] zero-prefixable-int
-fn exp<'i>(input: &mut &'i str) -> PResult<&'i str> {
+fn exp<'i>(input: &mut &'i str) -> ModalResult<&'i str> {
     (
         one_of((b'e', b'E')),
         opt(one_of([b'+', b'-'])),
@@ -250,7 +250,7 @@ fn exp<'i>(input: &mut &'i str) -> PResult<&'i str> {
 }
 
 // special-float = [ minus / plus ] ( inf / nan )
-fn special_float(input: &mut &str) -> PResult<f64> {
+fn special_float(input: &mut &str) -> ModalResult<f64> {
     (opt(one_of((b'+', b'-'))), alt((inf, nan)))
         .map(|(s, f)| match s {
             Some('+') | None => f,
@@ -260,24 +260,24 @@ fn special_float(input: &mut &str) -> PResult<f64> {
         .parse_next(input)
 }
 // inf = %x69.6e.66  ; inf
-fn inf(input: &mut &str) -> PResult<f64> {
+fn inf(input: &mut &str) -> ModalResult<f64> {
     INF.value(f64::INFINITY).parse_next(input)
 }
 const INF: &str = "inf";
 // nan = %x6e.61.6e  ; nan
-fn nan(input: &mut &str) -> PResult<f64> {
+fn nan(input: &mut &str) -> ModalResult<f64> {
     NAN.value(f64::NAN).parse_next(input)
 }
 const NAN: &str = "nan";
 
 // DIGIT = %x30-39 ; 0-9
-fn digit(input: &mut &str) -> PResult<char> {
+fn digit(input: &mut &str) -> ModalResult<char> {
     one_of(DIGIT).parse_next(input)
 }
 const DIGIT: RangeInclusive<u8> = b'0'..=b'9';
 
 // HEXDIG = DIGIT / "A" / "B" / "C" / "D" / "E" / "F"
-fn hexdig(input: &mut &str) -> PResult<char> {
+fn hexdig(input: &mut &str) -> ModalResult<char> {
     one_of(HEXDIG).parse_next(input)
 }
 const HEXDIG: (RangeInclusive<u8>, RangeInclusive<u8>, RangeInclusive<u8>) =

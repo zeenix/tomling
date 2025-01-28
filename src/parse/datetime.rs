@@ -8,7 +8,7 @@ use winnow::{
     error::{FromExternalError, StrContext},
     stream::Stream as _,
     token::{one_of, take_while},
-    PResult, Parser,
+    ModalResult, Parser,
 };
 
 // ;; Date and Time (as defined in RFC 3339)
@@ -19,7 +19,7 @@ use winnow::{
 // local-date = full-date
 // local-time = partial-time
 // full-time = partial-time time-offset
-pub(crate) fn date_time(input: &mut &str) -> PResult<Datetime> {
+pub(crate) fn date_time(input: &mut &str) -> ModalResult<Datetime> {
     trace(
         "date-time",
         alt((
@@ -50,11 +50,11 @@ pub(crate) fn date_time(input: &mut &str) -> PResult<Datetime> {
 }
 
 // full-date      = date-fullyear "-" date-month "-" date-mday
-fn full_date(input: &mut &str) -> PResult<Date> {
+fn full_date(input: &mut &str) -> ModalResult<Date> {
     trace("full-date", full_date_).parse_next(input)
 }
 
-fn full_date_(input: &mut &str) -> PResult<Date> {
+fn full_date_(input: &mut &str) -> ModalResult<Date> {
     let year = date_fullyear.parse_next(input)?;
     let _ = '-'.parse_next(input)?;
     let month = cut_err(date_month).parse_next(input)?;
@@ -83,7 +83,7 @@ fn full_date_(input: &mut &str) -> PResult<Date> {
 }
 
 // partial-time   = time-hour ":" time-minute ":" time-second [time-secfrac]
-fn partial_time(input: &mut &str) -> PResult<Time> {
+fn partial_time(input: &mut &str) -> ModalResult<Time> {
     trace(
         "partial-time",
         (
@@ -103,7 +103,7 @@ fn partial_time(input: &mut &str) -> PResult<Time> {
 
 // time-offset    = "Z" / time-numoffset
 // time-numoffset = ( "+" / "-" ) time-hour ":" time-minute
-fn time_offset(input: &mut &str) -> PResult<Offset> {
+fn time_offset(input: &mut &str) -> ModalResult<Offset> {
     trace(
         "time-offset",
         alt((
@@ -126,14 +126,14 @@ fn time_offset(input: &mut &str) -> PResult<Offset> {
 }
 
 // date-fullyear  = 4DIGIT
-fn date_fullyear(input: &mut &str) -> PResult<u16> {
+fn date_fullyear(input: &mut &str) -> ModalResult<u16> {
     unsigned_digits::<4, 4>
         .map(|s: &str| s.parse::<u16>().expect("4DIGIT should match u8"))
         .parse_next(input)
 }
 
 // date-month     = 2DIGIT  ; 01-12
-fn date_month(input: &mut &str) -> PResult<u8> {
+fn date_month(input: &mut &str) -> ModalResult<u8> {
     unsigned_digits::<2, 2>
         .try_map(|s: &str| {
             let d = s.parse::<u8>().expect("2DIGIT should match u8");
@@ -147,7 +147,7 @@ fn date_month(input: &mut &str) -> PResult<u8> {
 }
 
 // date-mday      = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on month/year
-fn date_mday(input: &mut &str) -> PResult<u8> {
+fn date_mday(input: &mut &str) -> ModalResult<u8> {
     unsigned_digits::<2, 2>
         .try_map(|s: &str| {
             let d = s.parse::<u8>().expect("2DIGIT should match u8");
@@ -161,14 +161,14 @@ fn date_mday(input: &mut &str) -> PResult<u8> {
 }
 
 // time-delim     = "T" / %x20 ; T, t, or space
-fn time_delim(input: &mut &str) -> PResult<char> {
+fn time_delim(input: &mut &str) -> ModalResult<char> {
     one_of(TIME_DELIM).parse_next(input)
 }
 
 const TIME_DELIM: (u8, u8, u8) = (b'T', b't', b' ');
 
 // time-hour      = 2DIGIT  ; 00-23
-fn time_hour(input: &mut &str) -> PResult<u8> {
+fn time_hour(input: &mut &str) -> ModalResult<u8> {
     unsigned_digits::<2, 2>
         .try_map(|s: &str| {
             let d = s.parse::<u8>().expect("2DIGIT should match u8");
@@ -182,7 +182,7 @@ fn time_hour(input: &mut &str) -> PResult<u8> {
 }
 
 // time-minute    = 2DIGIT  ; 00-59
-fn time_minute(input: &mut &str) -> PResult<u8> {
+fn time_minute(input: &mut &str) -> ModalResult<u8> {
     unsigned_digits::<2, 2>
         .try_map(|s: &str| {
             let d = s.parse::<u8>().expect("2DIGIT should match u8");
@@ -196,7 +196,7 @@ fn time_minute(input: &mut &str) -> PResult<u8> {
 }
 
 // time-second    = 2DIGIT  ; 00-58, 00-59, 00-60 based on leap second rules
-fn time_second(input: &mut &str) -> PResult<u8> {
+fn time_second(input: &mut &str) -> ModalResult<u8> {
     unsigned_digits::<2, 2>
         .try_map(|s: &str| {
             let d = s.parse::<u8>().expect("2DIGIT should match u8");
@@ -210,7 +210,7 @@ fn time_second(input: &mut &str) -> PResult<u8> {
 }
 
 // time-secfrac   = "." 1*DIGIT
-fn time_secfrac(input: &mut &str) -> PResult<u32> {
+fn time_secfrac(input: &mut &str) -> ModalResult<u32> {
     static SCALE: [u32; 10] = [
         0,
         100_000_000,
@@ -248,7 +248,7 @@ fn time_secfrac(input: &mut &str) -> PResult<u32> {
 
 fn unsigned_digits<'i, const MIN: usize, const MAX: usize>(
     input: &mut &'i str,
-) -> PResult<&'i str> {
+) -> ModalResult<&'i str> {
     take_while(MIN..=MAX, DIGIT).parse_next(input)
 }
 

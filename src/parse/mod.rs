@@ -12,7 +12,7 @@ use winnow::{
     combinator::{alt, cut_err, delimited, opt, peek, preceded, repeat, separated, separated_pair},
     error::ContextError,
     token::take_while,
-    PResult, Parser,
+    ModalResult, Parser,
 };
 
 /// Parse a TOML document.
@@ -78,7 +78,9 @@ pub fn parse(input: &str) -> Result<Table<'_>, Error> {
 }
 
 /// Parses a table header (e.g., `[dependencies]`)
-fn parse_table_header<'i>(input: &mut &'i str) -> PResult<(Vec<Cow<'i, str>>, bool), ContextError> {
+fn parse_table_header<'i>(
+    input: &mut &'i str,
+) -> ModalResult<(Vec<Cow<'i, str>>, bool), ContextError> {
     alt((
         delimited("[[", parse_dotted_key, "]]").map(|keys| (keys, true)), // Array of tables
         delimited('[', parse_dotted_key, ']').map(|keys| (keys, false)),  // Regular table
@@ -89,17 +91,17 @@ fn parse_table_header<'i>(input: &mut &'i str) -> PResult<(Vec<Cow<'i, str>>, bo
 /// Parses a single key-value pair
 fn parse_key_value<'i>(
     input: &mut &'i str,
-) -> PResult<(Vec<Cow<'i, str>>, Value<'i>), ContextError> {
+) -> ModalResult<(Vec<Cow<'i, str>>, Value<'i>), ContextError> {
     separated_pair(parse_dotted_key, '=', parse_value).parse_next(input)
 }
 
 /// Parses a dotted or single key
-fn parse_dotted_key<'i>(input: &mut &'i str) -> PResult<Vec<Cow<'i, str>>, ContextError> {
+fn parse_dotted_key<'i>(input: &mut &'i str) -> ModalResult<Vec<Cow<'i, str>>, ContextError> {
     separated(1.., parse_key, '.').parse_next(input)
 }
 
 /// Parses a key (alphanumeric or underscores)
-fn parse_key<'i>(input: &mut &'i str) -> PResult<Cow<'i, str>, ContextError> {
+fn parse_key<'i>(input: &mut &'i str) -> ModalResult<Cow<'i, str>, ContextError> {
     // We don't use `parse_string` here beecause that also accept multiline strings and we don't
     // want that here.
     let string_key = alt((strings::parse_basic, strings::parse_literal)).map(|s| match s {
@@ -118,7 +120,7 @@ fn parse_key<'i>(input: &mut &'i str) -> PResult<Cow<'i, str>, ContextError> {
 }
 
 /// Parses a value (string, integer, float, boolean, array, or table)
-fn parse_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+fn parse_value<'i>(input: &mut &'i str) -> ModalResult<Value<'i>, ContextError> {
     delimited(
         space0,
         // FIXME: Use `dispatch!` to make it more efficient.
@@ -137,33 +139,33 @@ fn parse_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
 }
 
 /// Parses an integer value
-fn parse_integer<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+fn parse_integer<'i>(input: &mut &'i str) -> ModalResult<Value<'i>, ContextError> {
     numbers::integer(input).map(Into::into)
 }
 
 /// Parses a float value
-fn parse_float<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+fn parse_float<'i>(input: &mut &'i str) -> ModalResult<Value<'i>, ContextError> {
     numbers::float(input).map(Into::into)
 }
 
 /// Parses a boolean value
-fn parse_boolean<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+fn parse_boolean<'i>(input: &mut &'i str) -> ModalResult<Value<'i>, ContextError> {
     numbers::boolean(input).map(Into::into)
 }
 
 /// Parses a datatime value.
-fn parse_datetime<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+fn parse_datetime<'i>(input: &mut &'i str) -> ModalResult<Value<'i>, ContextError> {
     datetime::date_time(input).map(Into::into)
 }
 
 /// Parses an array of values
-fn parse_array<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+fn parse_array<'i>(input: &mut &'i str) -> ModalResult<Value<'i>, ContextError> {
     delimited('[', cut_err(parse_multiline_array_values), cut_err(']'))
         .map(Into::into)
         .parse_next(input)
 }
 
-fn parse_multiline_array_values<'i>(input: &mut &'i str) -> PResult<Array<'i>, ContextError> {
+fn parse_multiline_array_values<'i>(input: &mut &'i str) -> ModalResult<Array<'i>, ContextError> {
     if peek(opt(']')).parse_next(input)?.is_some() {
         // Optimize for empty arrays, avoiding `value` from being expected to fail
         return Ok(Array::new());
@@ -181,12 +183,12 @@ fn parse_multiline_array_values<'i>(input: &mut &'i str) -> PResult<Array<'i>, C
     Ok(array)
 }
 
-fn parse_multiline_array_value<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+fn parse_multiline_array_value<'i>(input: &mut &'i str) -> ModalResult<Value<'i>, ContextError> {
     preceded(parse_whitespace_n_comments, parse_value).parse_next(input)
 }
 
 /// Parses an inline table
-fn parse_inline_table<'i>(input: &mut &'i str) -> PResult<Value<'i>, ContextError> {
+fn parse_inline_table<'i>(input: &mut &'i str) -> ModalResult<Value<'i>, ContextError> {
     delimited(
         '{',
         separated(0.., separated_pair(parse_key, '=', parse_value), ','),
