@@ -17,7 +17,7 @@ simd = ["winnow/simd"]
 std = ["winnow/std", "serde?/std"]
 
 [dependencies]
-winnow = { version = "0.6.24", default-features = false, features = ["alloc"] }
+winnow = { version = "0.7.0", default-features = false, features = ["alloc"] }
 serde = { version = "1.0.215", default-features = false, optional = true, features = [
     "derive",
     "alloc",
