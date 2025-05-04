@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use toml_test_harness::{Decoded, DecodedValue, Decoder, DecoderHarness};
+use toml_test_harness::{DecodedScalar, DecodedValue, Decoder, DecoderHarness};
 use tomling::{parse, Table, Value};
 
 #[derive(Clone, Copy)]
@@ -11,45 +11,45 @@ impl Decoder for Tomling {
         "tomling"
     }
 
-    fn decode(&self, data: &[u8]) -> Result<Decoded, toml_test_harness::Error> {
-        fn inner(data: &[u8]) -> Result<Decoded, String> {
+    fn decode(&self, data: &[u8]) -> Result<DecodedValue, toml_test_harness::Error> {
+        fn inner(data: &[u8]) -> Result<DecodedValue, String> {
             let s = std::str::from_utf8(data).map_err(|e| e.to_string())?;
             let table = parse(s).map_err(|e| e.to_string())?;
             let table = map_table(&table);
-            Ok(Decoded::Table(table))
+            Ok(DecodedValue::Table(table))
         }
 
         inner(data).map_err(toml_test_harness::Error::new)
     }
 }
 
-fn map_table(table: &Table<'_>) -> HashMap<String, Decoded> {
+fn map_table(table: &Table<'_>) -> HashMap<String, DecodedValue> {
     table
         .iter()
         .map(|(key, val)| (key.to_string(), value_to_decoded(val)))
         .collect()
 }
 
-fn value_to_decoded(value: &Value<'_>) -> Decoded {
+fn value_to_decoded(value: &Value<'_>) -> DecodedValue {
     match value {
-        Value::String(s) => Decoded::Value(s.to_string().into()),
-        &Value::Integer(i) => Decoded::Value(i.into()),
-        &Value::Float(f) => Decoded::Value(f.into()),
-        &Value::Boolean(b) => Decoded::Value(b.into()),
-        Value::Array(a) => Decoded::Array(a.iter().map(value_to_decoded).collect()),
-        Value::Table(t) => Decoded::Table(map_table(t)),
-        Value::Datetime(dt) => Decoded::Value(map_date_time(dt)),
+        Value::String(s) => DecodedValue::Scalar(s.to_string().into()),
+        &Value::Integer(i) => DecodedValue::Scalar(i.into()),
+        &Value::Float(f) => DecodedValue::Scalar(f.into()),
+        &Value::Boolean(b) => DecodedValue::Scalar(b.into()),
+        Value::Array(a) => DecodedValue::Array(a.iter().map(value_to_decoded).collect()),
+        Value::Table(t) => DecodedValue::Table(map_table(t)),
+        Value::Datetime(dt) => DecodedValue::Scalar(map_date_time(dt)),
     }
 }
 
-fn map_date_time(dt: &tomling::Datetime) -> DecodedValue {
+fn map_date_time(dt: &tomling::Datetime) -> DecodedScalar {
     let value = dt.to_string();
 
     match (dt.date.is_some(), dt.time.is_some(), dt.offset.is_some()) {
-        (true, true, true) => DecodedValue::Datetime(value),
-        (true, true, false) => DecodedValue::DatetimeLocal(value),
-        (true, false, false) => DecodedValue::DateLocal(value),
-        (false, true, false) => DecodedValue::TimeLocal(value),
+        (true, true, true) => DecodedScalar::Datetime(value),
+        (true, true, false) => DecodedScalar::DatetimeLocal(value),
+        (true, false, false) => DecodedScalar::DateLocal(value),
+        (false, true, false) => DecodedScalar::TimeLocal(value),
         _ => unreachable!("Unsupported case"),
     }
 }
@@ -60,6 +60,7 @@ fn toml_test_harness() {
     harness.version("1.0.0");
     harness
         .ignore([
+            "valid/multibyte.toml",
             "valid/array/array-subtables.toml",
             "valid/array/open-parent-table.toml",
             "valid/array/string-quote-comma-2.toml",
@@ -75,21 +76,24 @@ fn toml_test_harness() {
             "valid/inline-table/key-dotted-6.toml",
             "valid/inline-table/key-dotted-7.toml",
             "valid/key/escapes.toml",
+            "valid/key/quoted-dots.toml",
             "valid/key/quoted-unicode.toml",
             "valid/key/space.toml",
-            "valid/spec/array-of-tables-1.toml",
-            "valid/spec/inline-table-0.toml",
-            "valid/spec/string-0.toml",
-            "valid/spec/string-2.toml",
-            "valid/spec/string-3.toml",
-            "valid/spec/string-4.toml",
-            "valid/spec/string-7.toml",
-            "valid/spec/table-0.toml",
-            "valid/spec/table-3.toml",
-            "valid/spec/table-4.toml",
-            "valid/spec/table-5.toml",
-            "valid/spec/table-6.toml",
-            "valid/string/double-quote-escape.toml",
+            "valid/spec-1.0.0/array-of-tables-1.toml",
+            "valid/spec-1.0.0/inline-table-0.toml",
+            "valid/spec-1.0.0/string-0.toml",
+            "valid/spec-1.0.0/string-2.toml",
+            "valid/spec-1.0.0/string-3.toml",
+            "valid/spec-1.0.0/string-4.toml",
+            "valid/spec-1.0.0/string-7.toml",
+            "valid/spec-1.0.0/table-0.toml",
+            "valid/spec-1.0.0/table-3.toml",
+            "valid/spec-1.0.0/table-4.toml",
+            "valid/spec-1.0.0/table-5.toml",
+            "valid/spec-1.0.0/table-6.toml",
+            "valid/string/basic-escape-01.toml",
+            "valid/string/basic-escape-02.toml",
+            "valid/string/basic-escape-03.toml",
             "valid/string/ends-in-whitespace-escape.toml",
             "valid/string/escape-tricky.toml",
             "valid/string/escaped-escape.toml",
@@ -125,7 +129,7 @@ fn toml_test_harness() {
             "invalid/control/multi-lf.toml",
             "invalid/control/multi-null.toml",
             "invalid/control/multi-us.toml",
-            "invalid/control/rawmulti-cd.toml",
+            "invalid/control/rawmulti-cr.toml",
             "invalid/control/rawmulti-del.toml",
             "invalid/control/rawmulti-lf.toml",
             "invalid/control/rawmulti-null.toml",
@@ -157,18 +161,23 @@ fn toml_test_harness() {
             "invalid/key/duplicate-keys-2.toml",
             "invalid/key/duplicate-keys-3.toml",
             "invalid/key/duplicate-keys-4.toml",
+            "invalid/key/duplicate-keys-5.toml",
+            "invalid/key/duplicate-keys-6.toml",
+            "invalid/key/duplicate-keys-7.toml",
             "invalid/key/newline-2.toml",
             "invalid/key/newline-3.toml",
             "invalid/key/no-eol.toml",
             "invalid/key/special-character.toml",
-            "invalid/spec/inline-table-2-0.toml",
-            "invalid/spec/inline-table-3-0.toml",
-            "invalid/spec/table-9-0.toml",
-            "invalid/spec/table-9-1.toml",
+            "invalid/spec-1.0.0/inline-table-2-0.toml",
+            "invalid/spec-1.0.0/inline-table-3-0.toml",
+            "invalid/spec-1.0.0/table-9-0.toml",
+            "invalid/spec-1.0.0/table-9-1.toml",
             "invalid/string/bad-byte-escape.toml",
             "invalid/string/bad-escape-1.toml",
             "invalid/string/bad-escape-2.toml",
             "invalid/string/bad-escape-3.toml",
+            "invalid/string/bad-escape-4.toml",
+            "invalid/string/bad-escape-5.toml",
             "invalid/string/bad-hex-esc-1.toml",
             "invalid/string/bad-hex-esc-2.toml",
             "invalid/string/bad-hex-esc-3.toml",
