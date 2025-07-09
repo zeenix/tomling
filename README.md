@@ -20,6 +20,17 @@
 compatible. The main target is Cargo manifests (`Cargo.toml` files) and hence why specific API is
 provided for that purpose as well.
 
+## Abandoned
+
+As of 2025-07-09, this crate has been abandoned in favor of [`toml`] crate, which now supports all
+the important use cases this crate provides, has minimal dependencies, supports `no_std` and (unlike
+this crate) provides full compatibility with the specification.
+
+The only feature of `tomling` that `toml` does not provide, is the specific Cargo API. However,
+that can be easily developed on top of `toml`. If you're interested in that, feel free to take the
+relevant code from this crate (specifically the `cargo` module) and port it (which should be
+trivial) on top of `toml`. @zeenix may do that at some point. :)
+
 ## Usage
 
 ```rust
@@ -142,9 +153,12 @@ All features are enabled by default.
 
 ## Comparison with `toml` crate
 
-The [`toml`] crate is great but it being based on `toml_edit`, it ends up requiring `indexmap` crate
-and its dependencies. `tomling` was created specifically to avoid most of these dependencies by
-focusing completely on the parsing of `TOML` documents only.
+~~The [`toml`] crate is great but it being based on `toml_edit`, it ends up requiring `indexmap`
+crate and its dependencies. `tomling` was created specifically to avoid most of these dependencies
+by focusing completely on the parsing of `TOML` documents only.~~
+
+(As of 2025-07-09, the above is no longer the case and that's why this crate is now abandoned in
+favor of `toml` crate)
 
 Having said that, some of the code (especially the low-level parsing code) is inspired (or in some
 cases, copied) from the `toml_edit` crate.
